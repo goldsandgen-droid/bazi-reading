@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ba Zi Reading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0a0a0c;
+  --bg-card: #111115;
+  --bg-card-hover: #16161c;
+  --gold: #c9a84c;
+  --gold-dim: #8a7234;
+  --gold-bright: #e8c65a;
+  --crimson: #8b2232;
+  --crimson-glow: #c4354a;
+  --text: #d4d0c8;
+  --text-dim: #7a7770;
+  --text-bright: #f0ece4;
+  --border: #222228;
+  --wood: #4a7c59;
+  --fire: #c4354a;
+  --earth: #c9a84c;
+  --metal: #a0a0a8;
+  --water: #3a6b8c;
+}
+
+#starsCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── Noise texture overlay ─── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ─── Top decorative line ─── */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  z-index: 100;
+}
+
+/* ─── Layout ─── */
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+}
+
+/* ─── Header ─── */
+.header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+  animation: fadeUp 0.8s ease-out;
+}
+
+.header-symbol {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 2.8rem;
+  color: var(--gold);
+  letter-spacing: 1.2rem;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 40px rgba(201, 168, 76, 0.15);
+}
+
+.header h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.6rem;
+  font-weight: 300;
+  color: var(--text-bright);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.header p {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+/* ─── Cards ─── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 2.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 2rem; right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+}
+
+.card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 1.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.card-title .cn {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+/* ─── Form ─── */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group.full { grid-column: 1 / -1; }
+.form-group.half { grid-column: span 1; }
+
+.form-group label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.form-group input, .form-group select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-bright);
+  padding: 0.65rem 0.8rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  border-radius: 2px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--gold-dim);
+}
+
+.form-group select { cursor: pointer; }
+.form-group select option { background: var(--bg-card); }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* ─── Buttons ─── */
+.btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.85rem 2rem;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: #0a0a0c;
+  width: 100%;
+  margin-top: 1.5rem;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+  box-shadow: 0 4px 30px rgba(201, 168, 76, 0.2);
+}
+
+.btn-primary:active { transform: scale(0.98); }
+
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ─── Mode Tabs ─── */
+.mode-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mode-tab {
+  flex: 1;
+  padding: 0.55rem 0.5rem;
+  font-size: 0.68rem;
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-right: 1px solid var(--border);
+}
+
+.mode-tab:last-child { border-right: none; }
+
+.mode-tab.active {
+  background: var(--gold-dim);
+  color: #0a0a0c;
+}
+
+.mode-tab:hover:not(.active) {
+  color: var(--text);
+  background: rgba(201, 168, 76, 0.06);
+}
+
+/* ─── Results ─── */
+#results { display: none; }
+#results.visible { display: block; animation: fadeUp 0.6s ease-out; }
+
+/* ─── Pillars Display ─── */
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8rem;
+}
+
+.pillar {
+  text-align: center;
+  padding: 1.2rem 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  position: relative;
+  transition: border-color 0.3s;
+}
+
+.pillar:hover { border-color: var(--gold-dim); }
+
+.pillar-label {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.7rem;
+}
+
+.pillar-chars {
+  font-family: 'Noto Serif SC', serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.pillar-stem {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.pillar-branch {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.pillar-info {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pillar-pinyin {
+  font-size: 0.72rem;
+  color: var(--text);
+}
+
+.pillar-element {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+
+.pillar-animal {
+  font-size: 0.58rem;
+  color: var(--gold-dim);
+  letter-spacing: 0.08em;
+  margin-top: 0.15rem;
+}
+
+/* Element colors on pillars */
+.el-wood { color: var(--wood); }
+.el-fire { color: var(--fire); }
+.el-earth { color: var(--earth); }
+.el-metal { color: var(--metal); }
+.el-water { color: var(--water); }
+
+/* ─── Day Master Badge ─── */
+.day-master-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--bg);
+}
+
+.dm-char {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.dm-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.dm-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem;
+  color: var(--text-bright);
+}
+
+.dm-detail {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.dm-strength {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: 2px;
+  border: 1px solid;
+}
+
+.dm-strength.strong { color: var(--wood); border-color: var(--wood); }
+.dm-strength.weak { color: var(--fire); border-color: var(--fire); }
+.dm-strength.balanced { color: var(--earth); border-color: var(--earth); }
+
+/* ─── Elements Bar ─── */
+.elements-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.element-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 40px;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.element-name {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.element-bar-wrap {
+  height: 6px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.element-bar {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 1s ease-out;
+}
+
+.element-pct {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* ─── Ten Gods ─── */
+.ten-gods-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ten-god-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  background: var(--bg);
+  border-radius: 2px;
+  font-size: 0.78rem;
+}
+
+.ten-god-name { color: var(--text); }
+.ten-god-strength { color: var(--gold-dim); font-size: 0.72rem; }
+
+/* ─── Luck Cycles ─── */
+.luck-cycles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+}
+
+.luck-cycle {
+  text-align: center;
+  padding: 0.8rem 0.4rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: border-color 0.3s;
+}
+
+.luck-cycle:hover { border-color: var(--gold-dim); }
+
+.luck-age {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+}
+
+.luck-chars {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.luck-pinyin {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  margin-top: 0.25rem;
+}
+
+.luck-el {
+  font-size: 0.55rem;
+  margin-top: 0.15rem;
+}
+
+/* ─── AI Interpretation ─── */
+.interpret-section {
+  margin-top: 1.5rem;
+}
+
+.interpret-btn {
+  background: transparent;
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  width: 100%;
+  margin-top: 0;
+}
+
+.interpret-btn:hover {
+  background: rgba(201, 168, 76, 0.08);
+  border-color: var(--gold);
+}
+
+.interpret-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.interpretation-content {
+  display: none;
+  margin-top: 1.5rem;
+  padding: 2rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.interpretation-content.visible {
+  display: block;
+  animation: fadeUp 0.5s ease-out;
+}
+
+.interpretation-content h1, .interpretation-content h2, .interpretation-content h3 {
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--gold);
+  margin: 1.4rem 0 0.6rem;
+  font-weight: 600;
+}
+
+.interpretation-content h1 { font-size: 1.3rem; }
+.interpretation-content h2 { font-size: 1.15rem; }
+.interpretation-content h3 { font-size: 1rem; }
+
+.interpretation-content h1:first-child,
+.interpretation-content h2:first-child,
+.interpretation-content h3:first-child { margin-top: 0; }
+
+.interpretation-content p { margin-bottom: 0.8rem; }
+
+.interpretation-content ul, .interpretation-content ol {
+  margin: 0.5rem 0 0.8rem 1.2rem;
+}
+
+.interpretation-content li { margin-bottom: 0.3rem; }
+
+.interpretation-content strong { color: var(--text-bright); }
+
+.interpretation-content em { color: var(--gold-dim); font-style: italic; }
+
+/* ─── Loading ─── */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2rem;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+
+.loading-dots span {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  background: var(--gold-dim);
+  border-radius: 50%;
+  animation: loadPulse 1.4s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* ─── Error ─── */
+.error-msg {
+  padding: 0.8rem 1rem;
+  background: rgba(139, 34, 50, 0.15);
+  border: 1px solid rgba(196, 53, 74, 0.3);
+  border-radius: 2px;
+  color: var(--crimson-glow);
+  font-size: 0.82rem;
+  margin-top: 1rem;
+  display: none;
+}
+
+.error-msg.visible { display: block; }
+
+/* ─── Responsive ─── */
+@media (max-width: 640px) {
+  .container { padding: 2rem 1rem 3rem; }
+  .card { padding: 1.5rem; }
+  .header h1 { font-size: 1.8rem; }
+  .header-symbol { font-size: 2rem; letter-spacing: 0.8rem; }
+  .pillars-grid { grid-template-columns: repeat(2, 1fr); }
+  .luck-cycles { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ─── Animations ─── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loadPulse {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+</style>
+</head>
+<body>
+<canvas id="starsCanvas"></canvas>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-symbol">天命</div>
+    <h1>Four Pillars</h1>
+    <p>Ba Zi Destiny Reading</p>
+  </div>
+
+  <!-- Input Card -->
+  <div class="card" style="animation: fadeUp 0.6s ease-out 0.1s both">
+    <div class="card-title">Birth Details <span class="cn">生辰八字</span></div>
+    <form id="baziForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Year</label>
+          <input type="number" id="birthYear" placeholder="1990" min="1900" max="2100" required>
+        </div>
+        <div class="form-group">
+          <label>Month</label>
+          <input type="number" id="birthMonth" placeholder="6" min="1" max="12" required>
+        </div>
+        <div class="form-group">
+          <label>Day</label>
+          <input type="number" id="birthDay" placeholder="15" min="1" max="31" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Birth Time</label>
+          <input type="time" id="birthTime" value="12:00" required>
+        </div>
+        <div class="form-group">
+          <label>Gender</label>
+          <select id="gender" required>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" id="calcBtn">Generate Chart</button>
+      <div class="error-msg" id="calcError"></div>
+    </form>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    <!-- Day Master -->
+    <div class="card">
+      <div class="card-title">Day Master <span class="cn">日元</span></div>
+      <div class="day-master-badge" id="dayMasterBadge"></div>
+    </div>
+
+    <!-- Four Pillars -->
+    <div class="card">
+      <div class="card-title">Four Pillars <span class="cn">四柱</span></div>
+      <div class="pillars-grid" id="pillarsGrid"></div>
+    </div>
+
+    <!-- Five Elements -->
+    <div class="card">
+      <div class="card-title">Five Elements <span class="cn">五行</span></div>
+      <div class="elements-chart" id="elementsChart"></div>
+    </div>
+
+    <!-- Ten Gods -->
+    <div class="card">
+      <div class="card-title">Ten Gods <span class="cn">十神</span></div>
+      <div class="ten-gods-list" id="tenGodsList"></div>
+    </div>
+
+    <!-- Luck Cycles -->
+    <div class="card">
+      <div class="card-title">Luck Cycles <span class="cn">大运</span></div>
+      <div class="luck-cycles" id="luckCycles"></div>
+    </div>
+
+    <!-- AI Interpretation -->
+    <div class="card interpret-section">
+      <div class="card-title">AI Reading <span class="cn">命理解读</span></div>
+      <div class="mode-tabs" id="modeTabs">
+        <button class="mode-tab active" data-mode="general">General</button>
+        <button class="mode-tab" data-mode="career">Career</button>
+        <button class="mode-tab" data-mode="wealth">Wealth</button>
+        <button class="mode-tab" data-mode="love">Love</button>
+      </div>
+      <button class="btn interpret-btn" id="interpretBtn">Request AI Interpretation</button>
+      <div id="interpretLoading" class="loading" style="display:none">
+        <span>Reading the stars</span>
+        <span class="loading-dots"><span></span><span></span><span></span></span>
+      </div>
+      <div class="error-msg" id="interpretError"></div>
+      <div class="interpretation-content" id="interpretContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ───
+let chartData = null;
+let currentMode = 'general';
+
+// ─── Element color helper ───
+function elClass(element) {
+  return 'el-' + (element || '').toLowerCase();
+}
+function elColor(element) {
+  const map = { Wood: '#4a7c59', Fire: '#c4354a', Earth: '#c9a84c', Metal: '#a0a0a8', Water: '#3a6b8c' };
+  return map[element] || '#7a7770';
+}
+
+// ─── Simple markdown to HTML ───
+function md(text) {
+  return text
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, (m) => '<ul>' + m + '</ul>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(?!<[hulo])/gm, (m, offset, str) => {
+      if (str[offset - 1] === '>') return m;
+      return m;
+    })
+    .replace(/^([^<].+)$/gm, (m) => {
+      if (m.startsWith('<')) return m;
+      return '<p>' + m + '</p>';
+    })
+    .replace(/<p><\/p>/g, '')
+    .replace(/<p>(<[hulo])/g, '$1')
+    .replace(/(<\/[hulo][^>]*>)<\/p>/g, '$1');
+}
+
+// ─── Render Functions ───
+function renderDayMaster(dm) {
+  const el = document.getElementById('dayMasterBadge');
+  el.innerHTML = `
+    <div class="dm-char ${elClass(dm.element)}">${dm.char}</div>
+    <div class="dm-info">
+      <div class="dm-name">${dm.name} - ${dm.element}</div>
+      <div class="dm-detail">${dm.element} Day Master</div>
+    </div>
+    <span class="dm-strength ${dm.strength.toLowerCase()}">${dm.strength}</span>
+  `;
+}
+
+function renderPillars(pillars) {
+  const grid = document.getElementById('pillarsGrid');
+  const order = [
+    { key: 'year', label: 'Year' },
+    { key: 'month', label: 'Month' },
+    { key: 'day', label: 'Day' },
+    { key: 'hour', label: 'Hour' },
+  ];
+  grid.innerHTML = order.map(({ key, label }) => {
+    const p = pillars[key];
+    return `
+      <div class="pillar">
+        <div class="pillar-label">${label}</div>
+        <div class="pillar-chars">
+          <div class="pillar-stem ${elClass(p.elementStem)}">${p.stemCn}</div>
+          <div class="pillar-branch ${elClass(p.elementBranch)}">${p.branchCn}</div>
+        </div>
+        <div class="pillar-info">
+          <div class="pillar-pinyin">${p.stem} ${p.branch}</div>
+          <div class="pillar-element">${p.elementStem} / ${p.elementBranch}</div>
+          ${p.animal ? `<div class="pillar-animal">${p.animal}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderElements(counts, percents) {
+  const chart = document.getElementById('elementsChart');
+  const els = ['Wood', 'Fire', 'Earth', 'Metal', 'Water'];
+  chart.innerHTML = els.map(el => `
+    <div class="element-row">
+      <span class="element-name" style="color:${elColor(el)}">${el}</span>
+      <div class="element-bar-wrap">
+        <div class="element-bar" style="width:0%;background:${elColor(el)}" data-width="${percents[el]}"></div>
+      </div>
+      <span class="element-pct">${percents[el]}%</span>
+    </div>
+  `).join('');
+  // Animate bars
+  requestAnimationFrame(() => {
+    chart.querySelectorAll('.element-bar').forEach(bar => {
+      bar.style.width = bar.dataset.width + '%';
+    });
+  });
+}
+
+function renderTenGods(tenGods) {
+  const list = document.getElementById('tenGodsList');
+  const active = tenGods.filter(tg => tg.strength > 0).sort((a, b) => b.strength - a.strength);
+  if (active.length === 0) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:0.82rem;padding:0.5rem">No dominant Ten Gods detected</div>';
+    return;
+  }
+  list.innerHTML = active.map(tg => `
+    <div class="ten-god-item">
+      <span class="ten-god-name">${tg.name}</span>
+      <span class="ten-god-strength">${tg.strength}</span>
+    </div>
+  `).join('');
+}
+
+function renderLuckCycles(cycles) {
+  const container = document.getElementById('luckCycles');
+  container.innerHTML = cycles.map(c => `
+    <div class="luck-cycle">
+      <div class="luck-age">Age ${c.range}</div>
+      <div class="luck-chars">
+        <span class="${elClass(c.elementStem)}">${c.stemCn}</span><span class="${elClass(c.elementBranch)}">${c.branchCn}</span>
+      </div>
+      <div class="luck-pinyin">${c.stem} ${c.branch}</div>
+      <div class="luck-el" style="color:var(--text-dim)">${c.elementStem} / ${c.elementBranch}</div>
+    </div>
+  `).join('');
+}
+
+// ─── Calculate ───
+document.getElementById('baziForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('calcBtn');
+  const errEl = document.getElementById('calcError');
+  errEl.classList.remove('visible');
+  btn.disabled = true;
+  btn.textContent = 'Calculating...';
+
+  const timeVal = document.getElementById('birthTime').value; // "HH:MM"
+  const [timeH, timeM] = timeVal.split(':').map(Number);
+
+  const body = {
+    birthYear: parseInt(document.getElementById('birthYear').value),
+    birthMonth: parseInt(document.getElementById('birthMonth').value),
+    birthDay: parseInt(document.getElementById('birthDay').value),
+    birthHour: timeH || 0,
+    birthMinute: timeM || 0,
+    gender: document.getElementById('gender').value,
+  };
+
+  try {
+    const res = await fetch('/api/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Calculation failed');
+
+    chartData = data;
+    renderDayMaster(data.dayMaster);
+    renderPillars(data.pillars);
+    renderElements(data.fiveElements, data.fiveElementsPercent);
+    renderTenGods(data.tenGods);
+    renderLuckCycles(data.luckCycles);
+
+    // Reset interpretation
+    document.getElementById('interpretContent').classList.remove('visible');
+    document.getElementById('interpretContent').innerHTML = '';
+    document.getElementById('interpretError').classList.remove('visible');
+
+    document.getElementById('results').classList.add('visible');
+    setTimeout(() => {
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generate Chart';
+  }
+});
+
+// ─── Mode Tabs ───
+document.getElementById('modeTabs').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('mode-tab')) return;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  currentMode = e.target.dataset.mode;
+});
+
+// ─── AI Interpretation ───
+document.getElementById('interpretBtn').addEventListener('click', async () => {
+  if (!chartData) return;
+  const btn = document.getElementById('interpretBtn');
+  const loading = document.getElementById('interpretLoading');
+  const content = document.getElementById('interpretContent');
+  const errEl = document.getElementById('interpretError');
+
+  btn.disabled = true;
+  loading.style.display = 'flex';
+  content.classList.remove('visible');
+  errEl.classList.remove('visible');
+
+  try {
+    const res = await fetch('/api/interpret', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...chartData,
+        mode: currentMode,
+        gender: document.getElementById('gender').value,
+        birthYear: Number(document.getElementById('birthYear').value),
+        birthMonth: Number(document.getElementById('birthMonth').value),
+        birthDay: Number(document.getElementById('birthDay').value),
+        birthHour: Number(document.getElementById('birthTime').value.split(':')[0] || 0),
+        birthMinute: Number(document.getElementById('birthTime').value.split(':')[1] || 0),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Interpretation failed');
+
+    content.innerHTML = md(data.interpretation);
+    content.classList.add('visible');
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.add('visible');
+  } finally {
+    btn.disabled = false;
+    loading.style.display = 'none';
+  }
+});
+
+// ─── Stars Canvas Background ───
+(function() {
+  const canvas = document.getElementById('starsCanvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, stars = [], shootingStars = [];
+  const STAR_COUNT = 280;
+  const SHOOTING_INTERVAL = 4000;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+
+  function createStar() {
+    return {
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 1.4 + 0.3,
+      baseAlpha: Math.random() * 0.6 + 0.2,
+      alpha: 0,
+      twinkleSpeed: Math.random() * 0.008 + 0.003,
+      twinkleOffset: Math.random() * Math.PI * 2,
+      hue: Math.random() < 0.15 ? (Math.random() < 0.5 ? 40 : 220) : 0,
+      saturation: Math.random() < 0.15 ? (Math.random() * 30 + 20) : 0,
+    };
+  }
+
+  function createShootingStar() {
+    const startX = Math.random() * w * 0.8;
+    const startY = Math.random() * h * 0.4;
+    const angle = Math.PI / 6 + Math.random() * Math.PI / 6;
+    return {
+      x: startX, y: startY,
+      len: Math.random() * 60 + 40,
+      speed: Math.random() * 4 + 3,
+      angle: angle,
+      alpha: 1,
+      life: 0,
+      maxLife: 60 + Math.random() * 40,
+    };
+  }
+
+  function init() {
+    resize();
+    stars = [];
+    for (let i = 0; i < STAR_COUNT; i++) stars.push(createStar());
+  }
+
+  let lastShoot = 0;
+  function animate(time) {
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw stars
+    for (const s of stars) {
+      const twinkle = Math.sin(time * s.twinkleSpeed + s.twinkleOffset);
+      s.alpha = s.baseAlpha + twinkle * s.baseAlpha * 0.5;
+      if (s.hue) {
+        ctx.fillStyle = `hsla(${s.hue}, ${s.saturation}%, 85%, ${s.alpha})`;
+      } else {
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+      }
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Subtle glow on brighter stars
+      if (s.r > 1.0 && s.alpha > 0.4) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * 0.08})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Shooting stars
+    if (time - lastShoot > SHOOTING_INTERVAL && Math.random() < 0.02) {
+      shootingStars.push(createShootingStar());
+      lastShoot = time;
+    }
+
+    for (let i = shootingStars.length - 1; i >= 0; i--) {
+      const ss = shootingStars[i];
+      ss.x += Math.cos(ss.angle) * ss.speed;
+      ss.y += Math.sin(ss.angle) * ss.speed;
+      ss.life++;
+      ss.alpha = 1 - (ss.life / ss.maxLife);
+      if (ss.life >= ss.maxLife) { shootingStars.splice(i, 1); continue; }
+
+      const tailX = ss.x - Math.cos(ss.angle) * ss.len;
+      const tailY = ss.y - Math.sin(ss.angle) * ss.len;
+      const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
+      grad.addColorStop(0, `rgba(255, 255, 255, 0)`);
+      grad.addColorStop(1, `rgba(255, 255, 255, ${ss.alpha * 0.7})`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(tailX, tailY);
+      ctx.lineTo(ss.x, ss.y);
+      ctx.stroke();
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  window.addEventListener('resize', () => { resize(); });
+  init();
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
