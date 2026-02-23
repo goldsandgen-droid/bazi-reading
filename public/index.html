@@ -610,13 +610,37 @@ body::after {
 
 /* ─── Responsive ─── */
 @media (max-width: 640px) {
-  .container { padding: 2rem 1rem 3rem; }
-  .card { padding: 1.5rem; }
-  .header h1 { font-size: 1.8rem; }
-  .header-symbol { font-size: 2rem; letter-spacing: 0.8rem; }
-  .pillars-grid { grid-template-columns: repeat(2, 1fr); }
-  .luck-cycles { grid-template-columns: repeat(2, 1fr); }
+  .container { padding: 1.5rem 0.75rem 3rem; }
+  .card { padding: 1.2rem; }
+  .header { padding: 2rem 0 1.5rem; }
+  .header h1 { font-size: 1.6rem; }
+  .header-sub { font-size: 0.7rem; }
+  .header-symbol { font-size: 1.8rem; letter-spacing: 0.6rem; }
   .form-grid { grid-template-columns: 1fr 1fr; }
+  .form-group.full { grid-column: 1 / -1; }
+  .pillars-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  .pillar { padding: 0.9rem 0.3rem; }
+  .pillar-stem, .pillar-branch { font-size: 1.6rem; }
+  .pillar-info { font-size: 0.55rem; }
+  .luck-cycles { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  .luck-card { padding: 0.7rem; }
+  .luck-card .pillar-stem, .luck-card .pillar-branch { font-size: 1.1rem; }
+  .mode-tab { font-size: 0.58rem; padding: 0.5rem 0.3rem; letter-spacing: 0.08em; }
+  .interpretation-content { padding: 1.2rem; font-size: 0.84rem; }
+  .interpretation-content h1 { font-size: 1.1rem; }
+  .interpretation-content h2 { font-size: 1rem; }
+  .interpretation-content h3 { font-size: 0.9rem; }
+  .day-master-badge { font-size: 0.85rem; padding: 0.6rem 1rem; }
+  .btn { font-size: 0.7rem; padding: 0.7rem 1.5rem; }
+}
+
+@media (max-width: 380px) {
+  .container { padding: 1rem 0.5rem 2rem; }
+  .header h1 { font-size: 1.3rem; }
+  .header-symbol { font-size: 1.5rem; letter-spacing: 0.4rem; }
+  .form-grid { grid-template-columns: 1fr; }
+  .pillar-stem, .pillar-branch { font-size: 1.3rem; }
+  .mode-tab { font-size: 0.52rem; padding: 0.45rem 0.2rem; }
 }
 
 /* ─── Animations ─── */
