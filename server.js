@@ -202,6 +202,12 @@ app.post('/api/interpret', async (req, res) => {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured in .env' });
   }
 
+  // Access code check
+  const ACCESS_CODE = process.env.ACCESS_CODE || 'destiny';
+  if (req.body.accessCode !== ACCESS_CODE) {
+    return res.status(403).json({ error: 'Invalid access code' });
+  }
+
   const { pillars, fiveElements, fiveElementsPercent, tenGods, luckCycles, dayMaster, mode } = req.body;
   if (!pillars) return res.status(400).json({ error: 'Chart data required' });
 

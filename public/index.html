@@ -528,6 +528,32 @@ body::after {
   cursor: not-allowed;
 }
 
+.access-code-row {
+  margin-bottom: 0.8rem;
+}
+
+.access-code-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  transition: border-color 0.3s;
+}
+
+.access-code-input:focus {
+  outline: none;
+  border-color: var(--gold-dim);
+}
+
+.access-code-input::placeholder {
+  color: var(--text-dim);
+}
+
 .interpretation-content {
   display: none;
   margin-top: 1.5rem;
@@ -748,6 +774,9 @@ body::after {
         <button class="mode-tab" data-mode="career">Career</button>
         <button class="mode-tab" data-mode="wealth">Wealth</button>
         <button class="mode-tab" data-mode="love">Love</button>
+      </div>
+      <div class="access-code-row">
+        <input type="password" id="accessCode" placeholder="Enter access code" class="access-code-input">
       </div>
       <button class="btn interpret-btn" id="interpretBtn">Request AI Interpretation</button>
       <div id="interpretLoading" class="loading" style="display:none">
@@ -977,6 +1006,7 @@ document.getElementById('interpretBtn').addEventListener('click', async () => {
         birthDay: Number(document.getElementById('birthDay').value),
         birthHour: Number(document.getElementById('birthTime').value.split(':')[0] || 0),
         birthMinute: Number(document.getElementById('birthTime').value.split(':')[1] || 0),
+        accessCode: document.getElementById('accessCode').value,
       }),
     });
     const data = await res.json();
