@@ -1,7 +1,6 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
-const Anthropic = require('@anthropic-ai/sdk');
 const { Solar } = require('lunar-javascript');
 
 const app = express();
@@ -197,9 +196,9 @@ app.post('/api/calculate', (req, res) => {
 });
 
 app.post('/api/interpret', async (req, res) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === 'your_key_here') {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured in .env' });
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured in .env' });
   }
 
   // Access code check
@@ -208,10 +207,16 @@ app.post('/api/interpret', async (req, res) => {
     return res.status(403).json({ error: 'Invalid access code' });
   }
 
-  const { pillars, fiveElements, fiveElementsPercent, tenGods, luckCycles, dayMaster, mode } = req.body;
+  const { pillars, fiveElements, fiveElementsPercent, tenGods, luckCycles, dayMaster, mode, language } = req.body;
   if (!pillars) return res.status(400).json({ error: 'Chart data required' });
 
-  // Build prompt from repo logic
+  // Language config
+  const lang = language === 'zh' ? 'zh' : 'en';
+  const outputLangInstruction = lang === 'zh'
+    ? '\u91cd\u8981\uff1a\u8bf7\u7528\u7b80\u4f53\u4e2d\u6587\u8f93\u51fa\u6240\u6709\u5185\u5bb9\u3002\u4f7f\u7528\u6e05\u6670\u7684Markdown\u6807\u9898\u7ed3\u6784\u3002'
+    : '\u91cd\u8981\uff1a\u8bf7\u7528\u82f1\u6587\u8f93\u51fa\u6240\u6709\u5185\u5bb9\uff0c\u4f46\u81ea\u7136\u5730\u7a7f\u63d2\u4e2d\u6587\u547d\u7406\u672f\u8bed\u3002\u4e2d\u6587\u672f\u8bed\u540e\u62ec\u53f7\u5185\u9644\u82f1\u6587\u7ffb\u8bd1\uff0c\u4f8b\u5982\uff1a\u6b63\u8d22 (Direct Wealth)\u3002';
+
+  // Build prompt data
   const elementLines = fiveElementsPercent
     ? Object.entries(fiveElementsPercent).map(([k, v]) => `- ${k}: ${v}%`).join('\n')
     : '- Not provided';
@@ -225,124 +230,142 @@ app.post('/api/interpret', async (req, res) => {
     ? luckCycles.map(c => `- Age ${c.range}: ${c.stem} ${c.branch} (${c.elementStem}/${c.elementBranch})`).join('\n')
     : '- Not provided';
 
-  // System prompt rooted in traditional Chinese Ba Zi methodology
   const genderLabel = req.body.gender === 'male' ? '\u4e7e\u9020 (Male Chart)' : '\u5764\u9020 (Female Chart)';
-
-  // Full Chinese system prompt for maximum Ba Zi retention, English output at the end
-  const genderCn = req.body.gender === 'male' ? '男' : '女';
+  const genderCn = req.body.gender === 'male' ? '\u7537' : '\u5973';
   const genderEn = req.body.gender === 'male' ? 'Male' : 'Female';
 
-  let systemPrompt = `你是一位经验丰富的八字命理大师，精通中国传统命理学。你使用经典的干支系统解读八字命盘。
+  let systemPrompt = `\u4f60\u662f\u4e00\u4f4d\u7ecf\u9a8c\u4e30\u5bcc\u7684\u516b\u5b57\u547d\u7406\u5927\u5e08\uff0c\u7cbe\u901a\u4e2d\u56fd\u4f20\u7edf\u547d\u7406\u5b66\u3002\u4f60\u4f7f\u7528\u7ecf\u5178\u7684\u5e72\u652f\u7cfb\u7edf\u89e3\u8bfb\u516b\u5b57\u547d\u76d8\u3002
 
-此命盘为${genderLabel}（${genderCn}命），出生于 ${req.body.birthYear}年${req.body.birthMonth}月${req.body.birthDay}日 ${String(req.body.birthHour || 0).padStart(2,'0')}:${String(req.body.birthMinute || 0).padStart(2,'0')}。你必须在整个解读中考虑命主的性别。
+\u6b64\u547d\u76d8\u4e3a${genderLabel}\uff08${genderCn}\u547d\uff09\uff0c\u51fa\u751f\u4e8e ${req.body.birthYear}\u5e74${req.body.birthMonth}\u6708${req.body.birthDay}\u65e5 ${String(req.body.birthHour || 0).padStart(2,'0')}:${String(req.body.birthMinute || 0).padStart(2,'0')}\u3002\u4f60\u5fc5\u987b\u5728\u6574\u4e2a\u89e3\u8bfb\u4e2d\u8003\u8651\u547d\u4e3b\u7684\u6027\u522b\u3002
 
-性别差异规则（必须遵守）：
-- 乾造（男）：正财为妻星，日支为夫妻宫。偏财也可代表父亲或情人。七杀代表竞争对手和挑战。
-- 坤造（女）：正官为夫星，日支为夫妻宫。七杀可代表情人或非正式伴侣。伤官克官，婚姻中需注意。
-- 男命看正财/偏财论妻妾和财运，女命看正官/七杀论丈夫和事业贵人
-- 大运走势对男女的影响不同：男命顺排或逆排取决于年干阴阳和性别，解读时必须指明这一点
-- 性格分析必须结合性别，相同的日主五行在男女身上表现不同
+\u6027\u522b\u5dee\u5f02\u89c4\u5219\uff08\u5fc5\u987b\u9075\u5b88\uff09\uff1a
+- \u4e7e\u9020\uff08\u7537\uff09\uff1a\u6b63\u8d22\u4e3a\u59bb\u661f\uff0c\u65e5\u652f\u4e3a\u592b\u59bb\u5bab\u3002\u504f\u8d22\u4e5f\u53ef\u4ee3\u8868\u7236\u4eb2\u6216\u60c5\u4eba\u3002\u4e03\u6740\u4ee3\u8868\u7ade\u4e89\u5bf9\u624b\u548c\u6311\u6218\u3002
+- \u5764\u9020\uff08\u5973\uff09\uff1a\u6b63\u5b98\u4e3a\u592b\u661f\uff0c\u65e5\u652f\u4e3a\u592b\u59bb\u5bab\u3002\u4e03\u6740\u53ef\u4ee3\u8868\u60c5\u4eba\u6216\u975e\u6b63\u5f0f\u4f34\u4fa3\u3002\u4f24\u5b98\u514b\u5b98\uff0c\u5a5a\u59fb\u4e2d\u9700\u6ce8\u610f\u3002
+- \u7537\u547d\u770b\u6b63\u8d22/\u504f\u8d22\u8bba\u59bb\u59be\u548c\u8d22\u8fd0\uff0c\u5973\u547d\u770b\u6b63\u5b98/\u4e03\u6740\u8bba\u4e08\u592b\u548c\u4e8b\u4e1a\u8d35\u4eba
+- \u5927\u8fd0\u8d70\u52bf\u5bf9\u7537\u5973\u7684\u5f71\u54cd\u4e0d\u540c\uff1a\u7537\u547d\u987a\u6392\u6216\u9006\u6392\u53d6\u51b3\u4e8e\u5e74\u5e72\u9634\u9633\u548c\u6027\u522b\uff0c\u89e3\u8bfb\u65f6\u5fc5\u987b\u6307\u660e\u8fd9\u4e00\u70b9
+- \u6027\u683c\u5206\u6790\u5fc5\u987b\u7ed3\u5408\u6027\u522b\uff0c\u76f8\u540c\u7684\u65e5\u4e3b\u4e94\u884c\u5728\u7537\u5973\u8eab\u4e0a\u8868\u73b0\u4e0d\u540c
 
-核心方法论：
-- 八字排盘：四柱（年柱、月柱、日柱、时柱），每柱包含天干和地支
-- 日元/日主：日柱天干代表命主本人，其五行属性和旺衰是整个命盘解读的基础
-- 五行：木、火、土、金、水。分析其平衡，何者旺、何者缺，以及生克关系（相生相克循环）
-- 十神：由各字与日主的关系推导。包括正官、偏官/七杀、正财、偏财、食神、伤官、正印、偏印、比肩、劫财
-- 大运：每步大运约管10年。分析每步大运的五行如何与日主及整体命盘交互
-- 用神：确定命盘最需要哪种五行来平衡
-- 忌神：确定命盘最忌讳的五行，需要回避
+\u6838\u5fc3\u65b9\u6cd5\u8bba\uff1a
+- \u516b\u5b57\u6392\u76d8\uff1a\u56db\u67f1\uff08\u5e74\u67f1\u3001\u6708\u67f1\u3001\u65e5\u67f1\u3001\u65f6\u67f1\uff09\uff0c\u6bcf\u67f1\u5305\u542b\u5929\u5e72\u548c\u5730\u652f
+- \u65e5\u5143/\u65e5\u4e3b\uff1a\u65e5\u67f1\u5929\u5e72\u4ee3\u8868\u547d\u4e3b\u672c\u4eba\uff0c\u5176\u4e94\u884c\u5c5e\u6027\u548c\u65fa\u8870\u662f\u6574\u4e2a\u547d\u76d8\u89e3\u8bfb\u7684\u57fa\u7840
+- \u4e94\u884c\uff1a\u6728\u3001\u706b\u3001\u571f\u3001\u91d1\u3001\u6c34\u3002\u5206\u6790\u5176\u5e73\u8861\uff0c\u4f55\u8005\u65fa\u3001\u4f55\u8005\u7f3a\uff0c\u4ee5\u53ca\u751f\u514b\u5173\u7cfb\uff08\u76f8\u751f\u76f8\u514b\u5faa\u73af\uff09
+- \u5341\u795e\uff1a\u7531\u5404\u5b57\u4e0e\u65e5\u4e3b\u7684\u5173\u7cfb\u63a8\u5bfc\u3002\u5305\u62ec\u6b63\u5b98\u3001\u504f\u5b98/\u4e03\u6740\u3001\u6b63\u8d22\u3001\u504f\u8d22\u3001\u98df\u795e\u3001\u4f24\u5b98\u3001\u6b63\u5370\u3001\u504f\u5370\u3001\u6bd4\u80a9\u3001\u52ab\u8d22
+- \u5927\u8fd0\uff1a\u6bcf\u6b65\u5927\u8fd0\u7ea6\u7ba110\u5e74\u3002\u5206\u6790\u6bcf\u6b65\u5927\u8fd0\u7684\u4e94\u884c\u5982\u4f55\u4e0e\u65e5\u4e3b\u53ca\u6574\u4f53\u547d\u76d8\u4ea4\u4e92
+- \u7528\u795e\uff1a\u786e\u5b9a\u547d\u76d8\u6700\u9700\u8981\u54ea\u79cd\u4e94\u884c\u6765\u5e73\u8861
+- \u5fcc\u795e\uff1a\u786e\u5b9a\u547d\u76d8\u6700\u5fcc\u8beb\u7684\u4e94\u884c\uff0c\u9700\u8981\u56de\u907f
 
-解读必须覆盖：
-1. 日元分析 - 五行属性、阴阳、身强/身弱/中和、性格特征和天然倾向（结合性别分析）
-2. 五行分布 - 何者旺、何者缺、生克关系对命主的影响
-3. 十神格局 - 哪些十神占主导地位，对性格、感情、事业、财运的影响（必须区分男女不同含义）
-4. 大运走势 - 逐步分析各大运，标注吉运和凶运的具体年龄段
-5. 用神与实践建议 - 应该追求哪种五行，有利的方位、颜色、行业，以及可操作的生活建议
+\u89e3\u8bfb\u5fc5\u987b\u8986\u76d6\uff1a
+1. \u65e5\u5143\u5206\u6790 - \u4e94\u884c\u5c5e\u6027\u3001\u9634\u9633\u3001\u8eab\u5f3a/\u8eab\u5f31/\u4e2d\u548c\u3001\u6027\u683c\u7279\u5f81\u548c\u5929\u7136\u503e\u5411\uff08\u7ed3\u5408\u6027\u522b\u5206\u6790\uff09
+2. \u4e94\u884c\u5206\u5e03 - \u4f55\u8005\u65fa\u3001\u4f55\u8005\u7f3a\u3001\u751f\u514b\u5173\u7cfb\u5bf9\u547d\u4e3b\u7684\u5f71\u54cd
+3. \u5341\u795e\u683c\u5c40 - \u54ea\u4e9b\u5341\u795e\u5360\u4e3b\u5bfc\u5730\u4f4d\uff0c\u5bf9\u6027\u683c\u3001\u611f\u60c5\u3001\u4e8b\u4e1a\u3001\u8d22\u8fd0\u7684\u5f71\u54cd\uff08\u5fc5\u987b\u533a\u5206\u7537\u5973\u4e0d\u540c\u542b\u4e49\uff09
+4. \u5927\u8fd0\u8d70\u52bf - \u9010\u6b65\u5206\u6790\u5404\u5927\u8fd0\uff0c\u6807\u6ce8\u5409\u8fd0\u548c\u51f6\u8fd0\u7684\u5177\u4f53\u5e74\u9f84\u6bb5
+5. \u7528\u795e\u4e0e\u5b9e\u8df5\u5efa\u8bae - \u5e94\u8be5\u8ffd\u6c42\u54ea\u79cd\u4e94\u884c\uff0c\u6709\u5229\u7684\u65b9\u4f4d\u3001\u989c\u8272\u3001\u884c\u4e1a\uff0c\u4ee5\u53ca\u53ef\u64cd\u4f5c\u7684\u751f\u6d3b\u5efa\u8bae
 
-规则：
-- 必须针对此命盘具体分析，引用实际的柱、五行、十神
-- 不要笼统的套话或泛泛而谈
-- 使用清晰的Markdown标题结构
-- 中文术语后括号内附英文翻译，例如：正财 (Direct Wealth)
+\u89c4\u5219\uff1a
+- \u5fc5\u987b\u9488\u5bf9\u6b64\u547d\u76d8\u5177\u4f53\u5206\u6790\uff0c\u5f15\u7528\u5b9e\u9645\u7684\u67f1\u3001\u4e94\u884c\u3001\u5341\u795e
+- \u4e0d\u8981\u7b3c\u7edf\u7684\u5957\u8bdd\u6216\u6cdb\u6cdb\u800c\u8c08
+- \u4f7f\u7528\u6e05\u6670\u7684Markdown\u6807\u9898\u7ed3\u6784
 
-重要：请用英文输出所有内容，但自然地穿插中文命理术语。在分析中必须明确提及命主是${genderEn}（${genderCn}命），并根据性别调整所有十神含义的解读。`;
+${outputLangInstruction}
+\u5728\u5206\u6790\u4e2d\u5fc5\u987b\u660e\u786e\u63d0\u53ca\u547d\u4e3b\u662f${genderEn}\uff08${genderCn}\u547d\uff09\uff0c\u5e76\u6839\u636e\u6027\u522b\u8c03\u6574\u6240\u6709\u5341\u795e\u542b\u4e49\u7684\u89e3\u8bfb\u3002`;
 
   if (mode === 'love') {
-    systemPrompt += `\n\n专题深度解读：感情婚姻（针对${genderCn}命）
+    systemPrompt += `\n\n\u4e13\u9898\u6df1\u5ea6\u89e3\u8bfb\uff1a\u611f\u60c5\u5a5a\u59fb\uff08\u9488\u5bf9${genderCn}\u547d\uff09
 
-此为${genderLabel}。${req.body.gender === 'male' ? '男命看正财为妻星，偏财为情人星，日支为夫妻宫。分析正财的强弱和位置来判断婚姻质量。' : '女命看正官为夫星，七杀为情人星，日支为夫妻宫。分析正官的强弱和位置来判断婚姻质量。伤官见官需特别注意。'}
+\u6b64\u4e3a${genderLabel}\u3002${req.body.gender === 'male' ? '\u7537\u547d\u770b\u6b63\u8d22\u4e3a\u59bb\u661f\uff0c\u504f\u8d22\u4e3a\u60c5\u4eba\u661f\uff0c\u65e5\u652f\u4e3a\u592b\u59bb\u5bab\u3002\u5206\u6790\u6b63\u8d22\u7684\u5f3a\u5f31\u548c\u4f4d\u7f6e\u6765\u5224\u65ad\u5a5a\u59fb\u8d28\u91cf\u3002' : '\u5973\u547d\u770b\u6b63\u5b98\u4e3a\u592b\u661f\uff0c\u4e03\u6740\u4e3a\u60c5\u4eba\u661f\uff0c\u65e5\u652f\u4e3a\u592b\u59bb\u5bab\u3002\u5206\u6790\u6b63\u5b98\u7684\u5f3a\u5f31\u548c\u4f4d\u7f6e\u6765\u5224\u65ad\u5a5a\u59fb\u8d28\u91cf\u3002\u4f24\u5b98\u89c1\u5b98\u9700\u7279\u522b\u6ce8\u610f\u3002'}
 
-你必须逐一回答以下问题（用清晰的小标题分隔每个问题）：
+\u4f60\u5fc5\u987b\u9010\u4e00\u56de\u7b54\u4ee5\u4e0b\u95ee\u9898\uff08\u7528\u6e05\u6670\u7684\u5c0f\u6807\u9898\u5206\u9694\u6bcf\u4e2a\u95ee\u9898\uff09\uff1a
 
-1. 理想伴侣画像：根据命盘中的${req.body.gender === 'male' ? '妻星（正财/偏财）' : '夫星（正官/七杀）'}五行属性，描述最适合的伴侣类型。包括：对方的性格特征、五行属性、适合的生肖或日主类型、外貌气质倾向。
-2. 恋爱和婚姻时机：逐步检查每步大运，明确指出哪些年龄段是感情最旺的时期（桃花运旺、婚姻宫被冲合的年份）。给出具体的年龄范围，例如"26-28岁是最强的婚姻窗口"。
-3. 感情中的潜在障碍：分析命盘中可能导致感情困难的因素。${req.body.gender === 'male' ? '例如：劫财夺妻、比肩争财、日支被冲等。' : '例如：伤官见官、七杀混杂、日支被冲等。'}指出哪些大运年份容易出现感情危机或第三者问题。
-4. 婚姻稳定性：分析日支（夫妻宫）的状态。是否被冲、被合、被刑？这对婚姻的长期稳定性意味着什么？
-5. 感情态度与相处模式：根据十神格局分析命主在感情中的行为模式。是主动追求型还是被动等待型？容易付出还是容易索取？感情中最大的优势和最大的弱点是什么？
-6. 实用建议：基于用神五行，建议有利于感情的方位、颜色、活动、社交场合。什么时候应该主动出击，什么时候应该静待缘分？`;
+1. \u7406\u60f3\u4f34\u4fa3\u753b\u50cf\uff1a\u6839\u636e\u547d\u76d8\u4e2d\u7684${req.body.gender === 'male' ? '\u59bb\u661f\uff08\u6b63\u8d22/\u504f\u8d22\uff09' : '\u592b\u661f\uff08\u6b63\u5b98/\u4e03\u6740\uff09'}\u4e94\u884c\u5c5e\u6027\uff0c\u63cf\u8ff0\u6700\u9002\u5408\u7684\u4f34\u4fa3\u7c7b\u578b\u3002\u5305\u62ec\uff1a\u5bf9\u65b9\u7684\u6027\u683c\u7279\u5f81\u3001\u4e94\u884c\u5c5e\u6027\u3001\u9002\u5408\u7684\u751f\u8096\u6216\u65e5\u4e3b\u7c7b\u578b\u3001\u5916\u8c8c\u6c14\u8d28\u503e\u5411\u3002
+2. \u604b\u7231\u548c\u5a5a\u59fb\u65f6\u673a\uff1a\u9010\u6b65\u68c0\u67e5\u6bcf\u6b65\u5927\u8fd0\uff0c\u660e\u786e\u6307\u51fa\u54ea\u4e9b\u5e74\u9f84\u6bb5\u662f\u611f\u60c5\u6700\u65fa\u7684\u65f6\u671f\uff08\u6843\u82b1\u8fd0\u65fa\u3001\u5a5a\u59fb\u5bab\u88ab\u51b2\u5408\u7684\u5e74\u4efd\uff09\u3002\u7ed9\u51fa\u5177\u4f53\u7684\u5e74\u9f84\u8303\u56f4\uff0c\u4f8b\u5982\u201c26-28\u5c81\u662f\u6700\u5f3a\u7684\u5a5a\u59fb\u7a97\u53e3\u201d\u3002
+3. \u611f\u60c5\u4e2d\u7684\u6f5c\u5728\u969c\u788d\uff1a\u5206\u6790\u547d\u76d8\u4e2d\u53ef\u80fd\u5bfc\u81f4\u611f\u60c5\u56f0\u96be\u7684\u56e0\u7d20\u3002${req.body.gender === 'male' ? '\u4f8b\u5982\uff1a\u52ab\u8d22\u593a\u59bb\u3001\u6bd4\u80a9\u4e89\u8d22\u3001\u65e5\u652f\u88ab\u51b2\u7b49\u3002' : '\u4f8b\u5982\uff1a\u4f24\u5b98\u89c1\u5b98\u3001\u4e03\u6740\u6df7\u6742\u3001\u65e5\u652f\u88ab\u51b2\u7b49\u3002'}\u6307\u51fa\u54ea\u4e9b\u5927\u8fd0\u5e74\u4efd\u5bb9\u6613\u51fa\u73b0\u611f\u60c5\u5371\u673a\u6216\u7b2c\u4e09\u8005\u95ee\u9898\u3002
+4. \u5a5a\u59fb\u7a33\u5b9a\u6027\uff1a\u5206\u6790\u65e5\u652f\uff08\u592b\u59bb\u5bab\uff09\u7684\u72b6\u6001\u3002\u662f\u5426\u88ab\u51b2\u3001\u88ab\u5408\u3001\u88ab\u5211\uff1f\u8fd9\u5bf9\u5a5a\u59fb\u7684\u957f\u671f\u7a33\u5b9a\u6027\u610f\u5473\u7740\u4ec0\u4e48\uff1f
+5. \u611f\u60c5\u6001\u5ea6\u4e0e\u76f8\u5904\u6a21\u5f0f\uff1a\u6839\u636e\u5341\u795e\u683c\u5c40\u5206\u6790\u547d\u4e3b\u5728\u611f\u60c5\u4e2d\u7684\u884c\u4e3a\u6a21\u5f0f\u3002\u662f\u4e3b\u52a8\u8ffd\u6c42\u578b\u8fd8\u662f\u88ab\u52a8\u7b49\u5f85\u578b\uff1f\u5bb9\u6613\u4ed8\u51fa\u8fd8\u662f\u5bb9\u6613\u7d22\u53d6\uff1f\u611f\u60c5\u4e2d\u6700\u5927\u7684\u4f18\u52bf\u548c\u6700\u5927\u7684\u5f31\u70b9\u662f\u4ec0\u4e48\uff1f
+6. \u5b9e\u7528\u5efa\u8bae\uff1a\u57fa\u4e8e\u7528\u795e\u4e94\u884c\uff0c\u5efa\u8bae\u6709\u5229\u4e8e\u611f\u60c5\u7684\u65b9\u4f4d\u3001\u989c\u8272\u3001\u6d3b\u52a8\u3001\u793e\u4ea4\u573a\u5408\u3002\u4ec0\u4e48\u65f6\u5019\u5e94\u8be5\u4e3b\u52a8\u51fa\u51fb\uff0c\u4ec0\u4e48\u65f6\u5019\u5e94\u8be5\u9759\u5f85\u7f18\u5206\uff1f`;
   } else if (mode === 'career') {
-    systemPrompt += `\n\n专题深度解读：事业官运（针对${genderCn}命）
+    systemPrompt += `\n\n\u4e13\u9898\u6df1\u5ea6\u89e3\u8bfb\uff1a\u4e8b\u4e1a\u5b98\u8fd0\uff08\u9488\u5bf9${genderCn}\u547d\uff09
 
-此为${genderLabel}。${req.body.gender === 'male' ? '男命看正官/七杀为事业权力星。正官代表稳定仕途，七杀代表竞争拼搏。' : '女命看正官也代表丈夫和贵人，七杀代表外部压力和机遇。食神/伤官代表才华和创造力。'}
+\u6b64\u4e3a${genderLabel}\u3002${req.body.gender === 'male' ? '\u7537\u547d\u770b\u6b63\u5b98/\u4e03\u6740\u4e3a\u4e8b\u4e1a\u6743\u529b\u661f\u3002\u6b63\u5b98\u4ee3\u8868\u7a33\u5b9a\u4ed5\u9014\uff0c\u4e03\u6740\u4ee3\u8868\u7ade\u4e89\u62fc\u640f\u3002' : '\u5973\u547d\u770b\u6b63\u5b98\u4e5f\u4ee3\u8868\u4e08\u592b\u548c\u8d35\u4eba\uff0c\u4e03\u6740\u4ee3\u8868\u5916\u90e8\u538b\u529b\u548c\u673a\u9047\u3002\u98df\u795e/\u4f24\u5b98\u4ee3\u8868\u624d\u534e\u548c\u521b\u9020\u529b\u3002'}
 
-你必须逐一回答以下问题（用清晰的小标题分隔每个问题）：
+\u4f60\u5fc5\u987b\u9010\u4e00\u56de\u7b54\u4ee5\u4e0b\u95ee\u9898\uff08\u7528\u6e05\u6670\u7684\u5c0f\u6807\u9898\u5206\u9694\u6bcf\u4e2a\u95ee\u9898\uff09\uff1a
 
-1. 天赋与职业方向：根据日主五行、十神格局和用神，分析命主天生适合什么类型的工作。是适合稳定的职场（正官格）、创业拼搏（七杀格）、自由创作（食伤格）、还是经商理财（财星格）？给出具体的行业推荐，不要只说五行对应行业，要结合命主的整体格局给出个性化建议。
-2. 打工还是创业：分析命盘是更适合为人打工还是自己当老板。看比劫的力量（团队合作/竞争）、官杀的力量（领导力/压力承受）、食伤的力量（创造力/表达能力）。给出明确的建议。
-3. 事业高峰期：逐步分析每步大运，指出哪些年龄段是事业上升期、突破期、瓶颈期。给出具体的年龄范围和原因，例如"32-42岁走金水大运，用神得力，是事业黄金期"。
-4. 事业风险期：哪些大运年份容易遇到职场危机、裁员、合伙人纠纷、投资失败？是什么五行冲突导致的？如何提前规避？
-5. 贵人与小人：分析命盘中的贵人星和小人星。什么类型的人会帮助命主的事业？什么类型的人需要警惕？在职场中应该和什么五行属性的人合作？
-6. 当前运势与近期建议：根据命主的出生年份推算当前所处的大运，分析现在的事业运势如何。接下来2-3年应该主动跳槽/创业还是稳扎稳打？`;
+1. \u5929\u8d4b\u4e0e\u804c\u4e1a\u65b9\u5411\uff1a\u6839\u636e\u65e5\u4e3b\u4e94\u884c\u3001\u5341\u795e\u683c\u5c40\u548c\u7528\u795e\uff0c\u5206\u6790\u547d\u4e3b\u5929\u751f\u9002\u5408\u4ec0\u4e48\u7c7b\u578b\u7684\u5de5\u4f5c\u3002\u662f\u9002\u5408\u7a33\u5b9a\u7684\u804c\u573a\uff08\u6b63\u5b98\u683c\uff09\u3001\u521b\u4e1a\u62fc\u640f\uff08\u4e03\u6740\u683c\uff09\u3001\u81ea\u7531\u521b\u4f5c\uff08\u98df\u4f24\u683c\uff09\u3001\u8fd8\u662f\u7ecf\u5546\u7406\u8d22\uff08\u8d22\u661f\u683c\uff09\uff1f\u7ed9\u51fa\u5177\u4f53\u7684\u884c\u4e1a\u63a8\u8350\uff0c\u4e0d\u8981\u53ea\u8bf4\u4e94\u884c\u5bf9\u5e94\u884c\u4e1a\uff0c\u8981\u7ed3\u5408\u547d\u4e3b\u7684\u6574\u4f53\u683c\u5c40\u7ed9\u51fa\u4e2a\u6027\u5316\u5efa\u8bae\u3002
+2. \u6253\u5de5\u8fd8\u662f\u521b\u4e1a\uff1a\u5206\u6790\u547d\u76d8\u662f\u66f4\u9002\u5408\u4e3a\u4eba\u6253\u5de5\u8fd8\u662f\u81ea\u5df1\u5f53\u8001\u677f\u3002\u770b\u6bd4\u52ab\u7684\u529b\u91cf\uff08\u56e2\u961f\u5408\u4f5c/\u7ade\u4e89\uff09\u3001\u5b98\u6740\u7684\u529b\u91cf\uff08\u9886\u5bfc\u529b/\u538b\u529b\u627f\u53d7\uff09\u3001\u98df\u4f24\u7684\u529b\u91cf\uff08\u521b\u9020\u529b/\u8868\u8fbe\u80fd\u529b\uff09\u3002\u7ed9\u51fa\u660e\u786e\u7684\u5efa\u8bae\u3002
+3. \u4e8b\u4e1a\u9ad8\u5cf0\u671f\uff1a\u9010\u6b65\u5206\u6790\u6bcf\u6b65\u5927\u8fd0\uff0c\u6307\u51fa\u54ea\u4e9b\u5e74\u9f84\u6bb5\u662f\u4e8b\u4e1a\u4e0a\u5347\u671f\u3001\u7a81\u7834\u671f\u3001\u74f6\u9888\u671f\u3002\u7ed9\u51fa\u5177\u4f53\u7684\u5e74\u9f84\u8303\u56f4\u548c\u539f\u56e0\uff0c\u4f8b\u5982\u201c32-42\u5c81\u8d70\u91d1\u6c34\u5927\u8fd0\uff0c\u7528\u795e\u5f97\u529b\uff0c\u662f\u4e8b\u4e1a\u9ec4\u91d1\u671f\u201d\u3002
+4. \u4e8b\u4e1a\u98ce\u9669\u671f\uff1a\u54ea\u4e9b\u5927\u8fd0\u5e74\u4efd\u5bb9\u6613\u9047\u5230\u804c\u573a\u5371\u673a\u3001\u88c1\u5458\u3001\u5408\u4f19\u4eba\u7ea0\u7eb7\u3001\u6295\u8d44\u5931\u8d25\uff1f\u662f\u4ec0\u4e48\u4e94\u884c\u51b2\u7a81\u5bfc\u81f4\u7684\uff1f\u5982\u4f55\u63d0\u524d\u89c4\u907f\uff1f
+5. \u8d35\u4eba\u4e0e\u5c0f\u4eba\uff1a\u5206\u6790\u547d\u76d8\u4e2d\u7684\u8d35\u4eba\u661f\u548c\u5c0f\u4eba\u661f\u3002\u4ec0\u4e48\u7c7b\u578b\u7684\u4eba\u4f1a\u5e2e\u52a9\u547d\u4e3b\u7684\u4e8b\u4e1a\uff1f\u4ec0\u4e48\u7c7b\u578b\u7684\u4eba\u9700\u8981\u8b66\u60d5\uff1f\u5728\u804c\u573a\u4e2d\u5e94\u8be5\u548c\u4ec0\u4e48\u4e94\u884c\u5c5e\u6027\u7684\u4eba\u5408\u4f5c\uff1f
+6. \u5f53\u524d\u8fd0\u52bf\u4e0e\u8fd1\u671f\u5efa\u8bae\uff1a\u6839\u636e\u547d\u4e3b\u7684\u51fa\u751f\u5e74\u4efd\u63a8\u7b97\u5f53\u524d\u6240\u5904\u7684\u5927\u8fd0\uff0c\u5206\u6790\u73b0\u5728\u7684\u4e8b\u4e1a\u8fd0\u52bf\u5982\u4f55\u3002\u63a5\u4e0b\u67652-3\u5e74\u5e94\u8be5\u4e3b\u52a8\u8df3\u69fd/\u521b\u4e1a\u8fd8\u662f\u7a33\u624e\u7a33\u6253\uff1f`;
   } else if (mode === 'wealth') {
-    systemPrompt += `\n\n专题深度解读：财运分析（针对${genderCn}命）
+    systemPrompt += `\n\n\u4e13\u9898\u6df1\u5ea6\u89e3\u8bfb\uff1a\u8d22\u8fd0\u5206\u6790\uff08\u9488\u5bf9${genderCn}\u547d\uff09
 
-此为${genderLabel}。${req.body.gender === 'male' ? '男命正财既代表稳定收入也代表妻子，偏财代表意外之财和投资收益。' : '女命正财纯粹代表稳定收入和理财能力，偏财代表投资收益和额外收入。'}
+\u6b64\u4e3a${genderLabel}\u3002${req.body.gender === 'male' ? '\u7537\u547d\u6b63\u8d22\u65e2\u4ee3\u8868\u7a33\u5b9a\u6536\u5165\u4e5f\u4ee3\u8868\u59bb\u5b50\uff0c\u504f\u8d22\u4ee3\u8868\u610f\u5916\u4e4b\u8d22\u548c\u6295\u8d44\u6536\u76ca\u3002' : '\u5973\u547d\u6b63\u8d22\u7eaf\u7cb9\u4ee3\u8868\u7a33\u5b9a\u6536\u5165\u548c\u7406\u8d22\u80fd\u529b\uff0c\u504f\u8d22\u4ee3\u8868\u6295\u8d44\u6536\u76ca\u548c\u989d\u5916\u6536\u5165\u3002'}
 
-你必须逐一回答以下问题（用清晰的小标题分隔每个问题）：
+\u4f60\u5fc5\u987b\u9010\u4e00\u56de\u7b54\u4ee5\u4e0b\u95ee\u9898\uff08\u7528\u6e05\u6670\u7684\u5c0f\u6807\u9898\u5206\u9694\u6bcf\u4e2a\u95ee\u9898\uff09\uff1a
 
-1. 财运天赋：分析命主天生的赚钱能力和理财风格。是稳扎稳打靠正财（工资/主业）还是偏财运强（投资/副业/意外之财）？日主是否有足够的力量"担财"？身弱财旺意味着财来财去，身强财旺才能真正留住钱。
-2. 最佳赚钱方式：根据用神五行和十神格局，分析最适合命主的赚钱途径。是靠技术/手艺（食伤生财）、靠管理/权力（官星生印）、靠投资/人脉（偏财）、还是靠创业（比劫帮身配财星）？给出具体可操作的建议。
-3. 财运高峰期：逐步分析每步大运中的财运波动。哪些年龄段财运最旺？是正财旺（加薪/晋升）还是偏财旺（投资回报/意外收获）？给出具体的年龄范围。
-4. 破财风险期：哪些大运年份容易破财、亏损、被骗？分析劫财、比肩夺财的风险。是否有大运冲财星的危险年份？如何提前做好财务防护？
-5. 投资倾向：命主适合什么类型的投资？保守型（存款/债券）还是激进型（股票/加密货币/创业）？根据命盘中的财星和官杀关系，分析风险承受能力。
-6. 增财策略：基于用神五行，给出具体的增财建议。包括有利的方位（适合在哪个方向工作/投资）、颜色（穿着/办公环境）、数字、行业选择。什么时候适合冒险，什么时候应该守财？`;
+1. \u8d22\u8fd0\u5929\u8d4b\uff1a\u5206\u6790\u547d\u4e3b\u5929\u751f\u7684\u8d5a\u94b1\u80fd\u529b\u548c\u7406\u8d22\u98ce\u683c\u3002\u662f\u7a33\u624e\u7a33\u6253\u9760\u6b63\u8d22\uff08\u5de5\u8d44/\u4e3b\u4e1a\uff09\u8fd8\u662f\u504f\u8d22\u8fd0\u5f3a\uff08\u6295\u8d44/\u526f\u4e1a/\u610f\u5916\u4e4b\u8d22\uff09\uff1f\u65e5\u4e3b\u662f\u5426\u6709\u8db3\u591f\u7684\u529b\u91cf\u201c\u62c5\u8d22\u201d\uff1f\u8eab\u5f31\u8d22\u65fa\u610f\u5473\u7740\u8d22\u6765\u8d22\u53bb\uff0c\u8eab\u5f3a\u8d22\u65fa\u624d\u80fd\u771f\u6b63\u7559\u4f4f\u94b1\u3002
+2. \u6700\u4f73\u8d5a\u94b1\u65b9\u5f0f\uff1a\u6839\u636e\u7528\u795e\u4e94\u884c\u548c\u5341\u795e\u683c\u5c40\uff0c\u5206\u6790\u6700\u9002\u5408\u547d\u4e3b\u7684\u8d5a\u94b1\u9014\u5f84\u3002\u662f\u9760\u6280\u672f/\u624b\u827a\uff08\u98df\u4f24\u751f\u8d22\uff09\u3001\u9760\u7ba1\u7406/\u6743\u529b\uff08\u5b98\u661f\u751f\u5370\uff09\u3001\u9760\u6295\u8d44/\u4eba\u8109\uff08\u504f\u8d22\uff09\u3001\u8fd8\u662f\u9760\u521b\u4e1a\uff08\u6bd4\u52ab\u5e2e\u8eab\u914d\u8d22\u661f\uff09\uff1f\u7ed9\u51fa\u5177\u4f53\u53ef\u64cd\u4f5c\u7684\u5efa\u8bae\u3002
+3. \u8d22\u8fd0\u9ad8\u5cf0\u671f\uff1a\u9010\u6b65\u5206\u6790\u6bcf\u6b65\u5927\u8fd0\u4e2d\u7684\u8d22\u8fd0\u6ce2\u52a8\u3002\u54ea\u4e9b\u5e74\u9f84\u6bb5\u8d22\u8fd0\u6700\u65fa\uff1f\u662f\u6b63\u8d22\u65fa\uff08\u52a0\u85aa/\u664b\u5347\uff09\u8fd8\u662f\u504f\u8d22\u65fa\uff08\u6295\u8d44\u56de\u62a5/\u610f\u5916\u6536\u83b7\uff09\uff1f\u7ed9\u51fa\u5177\u4f53\u7684\u5e74\u9f84\u8303\u56f4\u3002
+4. \u7834\u8d22\u98ce\u9669\u671f\uff1a\u54ea\u4e9b\u5927\u8fd0\u5e74\u4efd\u5bb9\u6613\u7834\u8d22\u3001\u4e8f\u635f\u3001\u88ab\u9a97\uff1f\u5206\u6790\u52ab\u8d22\u3001\u6bd4\u80a9\u593a\u8d22\u7684\u98ce\u9669\u3002\u662f\u5426\u6709\u5927\u8fd0\u51b2\u8d22\u661f\u7684\u5371\u9669\u5e74\u4efd\uff1f\u5982\u4f55\u63d0\u524d\u505a\u597d\u8d22\u52a1\u9632\u62a4\uff1f
+5. \u6295\u8d44\u503e\u5411\uff1a\u547d\u4e3b\u9002\u5408\u4ec0\u4e48\u7c7b\u578b\u7684\u6295\u8d44\uff1f\u4fdd\u5b88\u578b\uff08\u5b58\u6b3e/\u503a\u5238\uff09\u8fd8\u662f\u6fc0\u8fdb\u578b\uff08\u80a1\u7968/\u52a0\u5bc6\u8d27\u5e01/\u521b\u4e1a\uff09\uff1f\u6839\u636e\u547d\u76d8\u4e2d\u7684\u8d22\u661f\u548c\u5b98\u6740\u5173\u7cfb\uff0c\u5206\u6790\u98ce\u9669\u627f\u53d7\u80fd\u529b\u3002
+6. \u589e\u8d22\u7b56\u7565\uff1a\u57fa\u4e8e\u7528\u795e\u4e94\u884c\uff0c\u7ed9\u51fa\u5177\u4f53\u7684\u589e\u8d22\u5efa\u8bae\u3002\u5305\u62ec\u6709\u5229\u7684\u65b9\u4f4d\uff08\u9002\u5408\u5728\u54ea\u4e2a\u65b9\u5411\u5de5\u4f5c/\u6295\u8d44\uff09\u3001\u989c\u8272\uff08\u7a7f\u7740/\u529e\u516c\u73af\u5883\uff09\u3001\u6570\u5b57\u3001\u884c\u4e1a\u9009\u62e9\u3002\u4ec0\u4e48\u65f6\u5019\u9002\u5408\u5192\u9669\uff0c\u4ec0\u4e48\u65f6\u5019\u5e94\u8be5\u5b88\u8d22\uff1f`;
   }
 
   const birthTimeStr = `${String(req.body.birthHour || 0).padStart(2,'0')}:${String(req.body.birthMinute || 0).padStart(2,'0')}`;
 
-  const userPrompt = `命主信息 (Chart Owner):
-- 性别 (Gender): ${genderLabel} (${genderEn})
-- 出生日期 (Birth Date): ${req.body.birthYear}年${req.body.birthMonth}月${req.body.birthDay}日
-- 出生时间 (Birth Time): ${birthTimeStr}
+  const userPrompt = `\u547d\u4e3b\u4fe1\u606f (Chart Owner):
+- \u6027\u522b (Gender): ${genderLabel} (${genderEn})
+- \u51fa\u751f\u65e5\u671f (Birth Date): ${req.body.birthYear}\u5e74${req.body.birthMonth}\u6708${req.body.birthDay}\u65e5
+- \u51fa\u751f\u65f6\u95f4 (Birth Time): ${birthTimeStr}
 
-八字四柱 (Four Pillars):
-年柱 (Year):  ${pillars.year.stemCn}${pillars.year.branchCn} (${pillars.year.stem} ${pillars.year.branch}) - ${pillars.year.animal}
-月柱 (Month): ${pillars.month.stemCn}${pillars.month.branchCn} (${pillars.month.stem} ${pillars.month.branch})
-日柱 (Day):   ${pillars.day.stemCn}${pillars.day.branchCn} (${pillars.day.stem} ${pillars.day.branch})
-时柱 (Hour):  ${pillars.hour.stemCn}${pillars.hour.branchCn} (${pillars.hour.stem} ${pillars.hour.branch})
+\u516b\u5b57\u56db\u67f1 (Four Pillars):
+\u5e74\u67f1 (Year):  ${pillars.year.stemCn}${pillars.year.branchCn} (${pillars.year.stem} ${pillars.year.branch}) - ${pillars.year.animal}
+\u6708\u67f1 (Month): ${pillars.month.stemCn}${pillars.month.branchCn} (${pillars.month.stem} ${pillars.month.branch})
+\u65e5\u67f1 (Day):   ${pillars.day.stemCn}${pillars.day.branchCn} (${pillars.day.stem} ${pillars.day.branch})
+\u65f6\u67f1 (Hour):  ${pillars.hour.stemCn}${pillars.hour.branchCn} (${pillars.hour.stem} ${pillars.hour.branch})
 
-日元 (Day Master): ${pillars.day.stemCn} ${pillars?.day?.stem || 'Unknown'} (${dayMaster?.element || 'Unknown'}) - ${dayMaster?.strength || 'Unknown'}
+\u65e5\u5143 (Day Master): ${pillars.day.stemCn} ${pillars?.day?.stem || 'Unknown'} (${dayMaster?.element || 'Unknown'}) - ${dayMaster?.strength || 'Unknown'}
 
-五行分布 (Five Elements):
+\u4e94\u884c\u5206\u5e03 (Five Elements):
 ${elementLines}
 
-十神 (Ten Gods - strongest):
+\u5341\u795e (Ten Gods - strongest):
 ${tenGodLines}
 
-大运 (Luck Cycles - each ~10 years):
+\u5927\u8fd0 (Luck Cycles - each ~10 years):
 ${luckLines}
 
 Please provide a thorough, personalized interpretation of this ${genderEn.toLowerCase()}'s chart. Tailor all analysis, recommendations, and advice specifically to this person based on their gender, birth details, and chart data above.`;
 
   try {
-    const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: userPrompt }],
-      system: systemPrompt,
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'X-No-Fallback': 'true',
+      },
+      body: JSON.stringify({
+        model: 'deepseek/deepseek-r1',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        max_tokens: 4000,
+      }),
     });
-    const content = message.content[0]?.text || 'No interpretation generated.';
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      const errMsg = data?.error?.message || JSON.stringify(data);
+      throw new Error(errMsg);
+    }
+
+    let content = data?.choices?.[0]?.message?.content || 'No interpretation generated.';
+
+    // Strip DeepSeek R1 thinking blocks
+    content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+
     res.json({ interpretation: content });
   } catch (err) {
     console.error('AI interpretation error:', err);

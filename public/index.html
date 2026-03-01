@@ -554,6 +554,120 @@ body::after {
   color: var(--text-dim);
 }
 
+/* ─── Language Select ─── */
+.lang-row {
+  margin-bottom: 0.8rem;
+}
+
+.lang-select {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: border-color 0.3s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237a7770' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+}
+
+.lang-select:focus {
+  outline: none;
+  border-color: var(--gold-dim);
+}
+
+.lang-select option {
+  background: var(--bg-card);
+}
+
+/* ─── Info Tooltip ─── */
+.info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--text-dim);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+  margin-left: 0.3rem;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.info-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(201, 168, 76, 0.08);
+}
+
+.info-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 280px;
+  padding: 0.9rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--gold-dim);
+  border-radius: 3px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text);
+  letter-spacing: 0;
+  text-transform: none;
+  z-index: 50;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.info-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--gold-dim);
+  border-top: 1px solid var(--gold-dim);
+}
+
+.info-btn.active .info-tooltip {
+  display: block;
+  animation: fadeUp 0.2s ease-out;
+}
+
+@media (max-width: 640px) {
+  .info-tooltip {
+    width: 220px;
+    font-size: 0.72rem;
+    left: auto;
+    right: -10px;
+    transform: none;
+  }
+  .info-tooltip::before {
+    left: auto;
+    right: 14px;
+    transform: rotate(45deg);
+  }
+}
+
 .interpretation-content {
   display: none;
   margin-top: 1.5rem;
@@ -738,31 +852,31 @@ body::after {
   <div id="results">
     <!-- Day Master -->
     <div class="card">
-      <div class="card-title">Day Master <span class="cn">日元</span></div>
+      <div class="card-title">Day Master <span class="cn">日元</span><button class="info-btn" data-info="daymaster">?<div class="info-tooltip">Your Day Master is the Heavenly Stem of your Day Pillar. It represents your core identity, personality, and how you interact with the world. It is the foundation of your entire Ba Zi chart.</div></button></div>
       <div class="day-master-badge" id="dayMasterBadge"></div>
     </div>
 
     <!-- Four Pillars -->
     <div class="card">
-      <div class="card-title">Four Pillars <span class="cn">四柱</span></div>
+      <div class="card-title">Four Pillars <span class="cn">四柱</span><button class="info-btn" data-info="pillars">?<div class="info-tooltip">The Four Pillars represent your Year, Month, Day, and Hour of birth. Each pillar has a Heavenly Stem (top) and Earthly Branch (bottom), forming eight characters total, hence "Ba Zi" (Eight Characters).</div></button></div>
       <div class="pillars-grid" id="pillarsGrid"></div>
     </div>
 
     <!-- Five Elements -->
     <div class="card">
-      <div class="card-title">Five Elements <span class="cn">五行</span></div>
+      <div class="card-title">Five Elements <span class="cn">五行</span><button class="info-btn" data-info="elements">?<div class="info-tooltip">Wood, Fire, Earth, Metal, and Water interact through cycles of generation and control. The balance of elements in your chart reveals strengths, weaknesses, and life tendencies.</div></button></div>
       <div class="elements-chart" id="elementsChart"></div>
     </div>
 
     <!-- Ten Gods -->
     <div class="card">
-      <div class="card-title">Ten Gods <span class="cn">十神</span></div>
+      <div class="card-title">Ten Gods <span class="cn">十神</span><button class="info-btn" data-info="tengods">?<div class="info-tooltip">Ten Gods are relationship patterns between each character and your Day Master. They reveal personality traits, relationship dynamics, career aptitude, and wealth potential.</div></button></div>
       <div class="ten-gods-list" id="tenGodsList"></div>
     </div>
 
     <!-- Luck Cycles -->
     <div class="card">
-      <div class="card-title">Luck Cycles <span class="cn">大运</span></div>
+      <div class="card-title">Luck Cycles <span class="cn">大运</span><button class="info-btn" data-info="luck">?<div class="info-tooltip">Each Luck Cycle spans roughly 10 years and represents a major phase of life. The elements in each cycle interact with your birth chart to create favorable or challenging periods.</div></button></div>
       <div class="luck-cycles" id="luckCycles"></div>
     </div>
 
@@ -777,6 +891,12 @@ body::after {
       </div>
       <div class="access-code-row">
         <input type="password" id="accessCode" placeholder="Enter access code" class="access-code-input">
+      </div>
+      <div class="lang-row">
+        <select id="langSelect" class="lang-select">
+          <option value="en">English</option>
+          <option value="zh">简体中文 (Simplified Chinese)</option>
+        </select>
       </div>
       <button class="btn interpret-btn" id="interpretBtn">Request AI Interpretation</button>
       <div id="interpretLoading" class="loading" style="display:none">
@@ -1000,6 +1120,7 @@ document.getElementById('interpretBtn').addEventListener('click', async () => {
       body: JSON.stringify({
         ...chartData,
         mode: currentMode,
+        language: document.getElementById('langSelect').value,
         gender: document.getElementById('gender').value,
         birthYear: Number(document.getElementById('birthYear').value),
         birthMonth: Number(document.getElementById('birthMonth').value),
@@ -1021,6 +1142,19 @@ document.getElementById('interpretBtn').addEventListener('click', async () => {
     btn.disabled = false;
     loading.style.display = 'none';
   }
+});
+
+// ─── Info Tooltips ───
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.info-btn');
+  if (btn) {
+    e.stopPropagation();
+    const wasActive = btn.classList.contains('active');
+    document.querySelectorAll('.info-btn.active').forEach(b => b.classList.remove('active'));
+    if (!wasActive) btn.classList.add('active');
+    return;
+  }
+  document.querySelectorAll('.info-btn.active').forEach(b => b.classList.remove('active'));
 });
 
 // ─── Stars Canvas Background ───
