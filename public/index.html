@@ -111,6 +111,46 @@ body::after {
   text-transform: uppercase;
 }
 
+/* ─── UI Language Toggle ─── */
+.ui-lang-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-top: 1.2rem;
+}
+
+.ui-lang-btn {
+  padding: 0.35rem 1.2rem;
+  font-size: 0.72rem;
+  font-family: 'DM Sans', sans-serif;
+  letter-spacing: 0.08em;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.ui-lang-btn:first-child {
+  border-radius: 2px 0 0 2px;
+  border-right: none;
+}
+
+.ui-lang-btn:last-child {
+  border-radius: 0 2px 2px 0;
+}
+
+.ui-lang-btn.active {
+  background: var(--gold-dim);
+  color: #0a0a0c;
+  border-color: var(--gold-dim);
+}
+
+.ui-lang-btn:hover:not(.active) {
+  color: var(--text);
+  background: rgba(201, 168, 76, 0.06);
+}
+
 /* ─── Cards ─── */
 .card {
   background: var(--bg-card);
@@ -808,38 +848,42 @@ body::after {
   <!-- Header -->
   <div class="header">
     <div class="header-symbol">天命</div>
-    <h1>Four Pillars</h1>
-    <p>Ba Zi Destiny Reading</p>
+    <h1 id="headerTitle">Four Pillars</h1>
+    <p id="headerSubtitle">Ba Zi Destiny Reading</p>
+    <div class="ui-lang-toggle" id="uiLangToggle">
+      <button class="ui-lang-btn active" data-uilang="en">EN</button>
+      <button class="ui-lang-btn" data-uilang="zh">中文</button>
+    </div>
   </div>
 
   <!-- Input Card -->
   <div class="card" style="animation: fadeUp 0.6s ease-out 0.1s both">
-    <div class="card-title">Birth Details <span class="cn">生辰八字</span></div>
+    <div class="card-title"><span id="birthDetailsTitle">Birth Details</span> <span class="cn" id="birthDetailsCn">生辰八字</span></div>
     <form id="baziForm">
       <div class="form-grid">
         <div class="form-group">
-          <label>Year</label>
+          <label id="labelYear">Year</label>
           <input type="number" id="birthYear" placeholder="1990" min="1900" max="2100" required>
         </div>
         <div class="form-group">
-          <label>Month</label>
+          <label id="labelMonth">Month</label>
           <input type="number" id="birthMonth" placeholder="6" min="1" max="12" required>
         </div>
         <div class="form-group">
-          <label>Day</label>
+          <label id="labelDay">Day</label>
           <input type="number" id="birthDay" placeholder="15" min="1" max="31" required>
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Birth Time</label>
+          <label id="labelBirthTime">Birth Time</label>
           <input type="time" id="birthTime" value="12:00" required>
         </div>
         <div class="form-group">
-          <label>Gender</label>
+          <label id="labelGender">Gender</label>
           <select id="gender" required>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
+            <option value="male" id="optMale">Male</option>
+            <option value="female" id="optFemale">Female</option>
           </select>
         </div>
       </div>
@@ -852,42 +896,42 @@ body::after {
   <div id="results">
     <!-- Day Master -->
     <div class="card">
-      <div class="card-title">Day Master <span class="cn">日元</span><button class="info-btn" data-info="daymaster">?<div class="info-tooltip">Your Day Master is the Heavenly Stem of your Day Pillar. It represents your core identity, personality, and how you interact with the world. It is the foundation of your entire Ba Zi chart.</div></button></div>
+      <div class="card-title"><span id="titleDayMaster">Day Master</span> <span class="cn" id="cnDayMaster">日元</span><button class="info-btn" data-info="daymaster">?<div class="info-tooltip" id="tooltipDayMaster">Your Day Master is the Heavenly Stem of your Day Pillar. It represents your core identity, personality, and how you interact with the world. It is the foundation of your entire Ba Zi chart.</div></button></div>
       <div class="day-master-badge" id="dayMasterBadge"></div>
     </div>
 
     <!-- Four Pillars -->
     <div class="card">
-      <div class="card-title">Four Pillars <span class="cn">四柱</span><button class="info-btn" data-info="pillars">?<div class="info-tooltip">The Four Pillars represent your Year, Month, Day, and Hour of birth. Each pillar has a Heavenly Stem (top) and Earthly Branch (bottom), forming eight characters total, hence "Ba Zi" (Eight Characters).</div></button></div>
+      <div class="card-title"><span id="titlePillars">Four Pillars</span> <span class="cn" id="cnPillars">四柱</span><button class="info-btn" data-info="pillars">?<div class="info-tooltip" id="tooltipPillars">The Four Pillars represent your Year, Month, Day, and Hour of birth. Each pillar has a Heavenly Stem (top) and Earthly Branch (bottom), forming eight characters total, hence "Ba Zi" (Eight Characters).</div></button></div>
       <div class="pillars-grid" id="pillarsGrid"></div>
     </div>
 
     <!-- Five Elements -->
     <div class="card">
-      <div class="card-title">Five Elements <span class="cn">五行</span><button class="info-btn" data-info="elements">?<div class="info-tooltip">Wood, Fire, Earth, Metal, and Water interact through cycles of generation and control. The balance of elements in your chart reveals strengths, weaknesses, and life tendencies.</div></button></div>
+      <div class="card-title"><span id="titleElements">Five Elements</span> <span class="cn" id="cnElements">五行</span><button class="info-btn" data-info="elements">?<div class="info-tooltip" id="tooltipElements">Wood, Fire, Earth, Metal, and Water interact through cycles of generation and control. The balance of elements in your chart reveals strengths, weaknesses, and life tendencies.</div></button></div>
       <div class="elements-chart" id="elementsChart"></div>
     </div>
 
     <!-- Ten Gods -->
     <div class="card">
-      <div class="card-title">Ten Gods <span class="cn">十神</span><button class="info-btn" data-info="tengods">?<div class="info-tooltip">Ten Gods are relationship patterns between each character and your Day Master. They reveal personality traits, relationship dynamics, career aptitude, and wealth potential.</div></button></div>
+      <div class="card-title"><span id="titleTenGods">Ten Gods</span> <span class="cn" id="cnTenGods">十神</span><button class="info-btn" data-info="tengods">?<div class="info-tooltip" id="tooltipTenGods">Ten Gods are relationship patterns between each character and your Day Master. They reveal personality traits, relationship dynamics, career aptitude, and wealth potential.</div></button></div>
       <div class="ten-gods-list" id="tenGodsList"></div>
     </div>
 
     <!-- Luck Cycles -->
     <div class="card">
-      <div class="card-title">Luck Cycles <span class="cn">大运</span><button class="info-btn" data-info="luck">?<div class="info-tooltip">Each Luck Cycle spans roughly 10 years and represents a major phase of life. The elements in each cycle interact with your birth chart to create favorable or challenging periods.</div></button></div>
+      <div class="card-title"><span id="titleLuck">Luck Cycles</span> <span class="cn" id="cnLuck">大运</span><button class="info-btn" data-info="luck">?<div class="info-tooltip" id="tooltipLuck">Each Luck Cycle spans roughly 10 years and represents a major phase of life. The elements in each cycle interact with your birth chart to create favorable or challenging periods.</div></button></div>
       <div class="luck-cycles" id="luckCycles"></div>
     </div>
 
     <!-- AI Interpretation -->
     <div class="card interpret-section">
-      <div class="card-title">AI Reading <span class="cn">命理解读</span></div>
+      <div class="card-title"><span id="titleAI">AI Reading</span> <span class="cn" id="cnAI">命理解读</span></div>
       <div class="mode-tabs" id="modeTabs">
-        <button class="mode-tab active" data-mode="general">General</button>
-        <button class="mode-tab" data-mode="career">Career</button>
-        <button class="mode-tab" data-mode="wealth">Wealth</button>
-        <button class="mode-tab" data-mode="love">Love</button>
+        <button class="mode-tab active" data-mode="general" id="tabGeneral">General</button>
+        <button class="mode-tab" data-mode="career" id="tabCareer">Career</button>
+        <button class="mode-tab" data-mode="wealth" id="tabWealth">Wealth</button>
+        <button class="mode-tab" data-mode="love" id="tabLove">Love</button>
       </div>
       <div class="access-code-row">
         <input type="password" id="accessCode" placeholder="Enter access code" class="access-code-input">
@@ -900,7 +944,7 @@ body::after {
       </div>
       <button class="btn interpret-btn" id="interpretBtn">Request AI Interpretation</button>
       <div id="interpretLoading" class="loading" style="display:none">
-        <span>Reading the stars</span>
+        <span id="loadingText">Reading the stars</span>
         <span class="loading-dots"><span></span><span></span><span></span></span>
       </div>
       <div class="error-msg" id="interpretError"></div>
@@ -913,6 +957,148 @@ body::after {
 // ─── State ───
 let chartData = null;
 let currentMode = 'general';
+let currentUILang = 'en';
+
+// ─── i18n Translation Map ───
+const i18n = {
+  en: {
+    headerTitle: 'Four Pillars',
+    headerSubtitle: 'Ba Zi Destiny Reading',
+    birthDetails: 'Birth Details',
+    birthDetailsCn: '\u751f\u8fb0\u516b\u5b57',
+    year: 'Year',
+    month: 'Month',
+    day: 'Day',
+    birthTime: 'Birth Time',
+    gender: 'Gender',
+    male: 'Male',
+    female: 'Female',
+    generateChart: 'Generate Chart',
+    calculating: 'Calculating...',
+    dayMaster: 'Day Master',
+    fourPillars: 'Four Pillars',
+    fiveElements: 'Five Elements',
+    tenGods: 'Ten Gods',
+    luckCycles: 'Luck Cycles',
+    aiReading: 'AI Reading',
+    cnDayMaster: '\u65e5\u5143',
+    cnPillars: '\u56db\u67f1',
+    cnElements: '\u4e94\u884c',
+    cnTenGods: '\u5341\u795e',
+    cnLuck: '\u5927\u8fd0',
+    cnAI: '\u547d\u7406\u89e3\u8bfb',
+    general: 'General',
+    career: 'Career',
+    wealth: 'Wealth',
+    love: 'Love',
+    accessCodePlaceholder: 'Enter access code',
+    requestInterpretation: 'Request AI Interpretation',
+    readingStars: 'Reading the stars',
+    pillarYear: 'Year',
+    pillarMonth: 'Month',
+    pillarDay: 'Day',
+    pillarHour: 'Hour',
+    Wood: 'Wood', Fire: 'Fire', Earth: 'Earth', Metal: 'Metal', Water: 'Water',
+    Strong: 'Strong', Weak: 'Weak', Balanced: 'Balanced',
+    dayMasterLabel: 'Day Master',
+    age: 'Age',
+    noTenGods: 'No dominant Ten Gods detected',
+    tooltipDayMaster: 'Your Day Master is the Heavenly Stem of your Day Pillar. It represents your core identity, personality, and how you interact with the world. It is the foundation of your entire Ba Zi chart.',
+    tooltipPillars: 'The Four Pillars represent your Year, Month, Day, and Hour of birth. Each pillar has a Heavenly Stem (top) and Earthly Branch (bottom), forming eight characters total, hence "Ba Zi" (Eight Characters).',
+    tooltipElements: 'Wood, Fire, Earth, Metal, and Water interact through cycles of generation and control. The balance of elements in your chart reveals strengths, weaknesses, and life tendencies.',
+    tooltipTenGods: 'Ten Gods are relationship patterns between each character and your Day Master. They reveal personality traits, relationship dynamics, career aptitude, and wealth potential.',
+    tooltipLuck: 'Each Luck Cycle spans roughly 10 years and represents a major phase of life. The elements in each cycle interact with your birth chart to create favorable or challenging periods.',
+    Rat: 'Rat', Ox: 'Ox', Tiger: 'Tiger', Rabbit: 'Rabbit',
+    Dragon: 'Dragon', Snake: 'Snake', Horse: 'Horse', Goat: 'Goat',
+    Monkey: 'Monkey', Rooster: 'Rooster', Dog: 'Dog', Pig: 'Pig',
+    langOptionEn: 'English',
+    langOptionZh: '\u7b80\u4f53\u4e2d\u6587 (Simplified Chinese)',
+  },
+  zh: {
+    headerTitle: '\u56db\u67f1\u547d\u76d8',
+    headerSubtitle: '\u516b\u5b57\u547d\u7406\u89e3\u8bfb',
+    birthDetails: '\u51fa\u751f\u4fe1\u606f',
+    birthDetailsCn: '',
+    year: '\u5e74',
+    month: '\u6708',
+    day: '\u65e5',
+    birthTime: '\u51fa\u751f\u65f6\u95f4',
+    gender: '\u6027\u522b',
+    male: '\u7537',
+    female: '\u5973',
+    generateChart: '\u751f\u6210\u547d\u76d8',
+    calculating: '\u8ba1\u7b97\u4e2d...',
+    dayMaster: '\u65e5\u4e3b',
+    fourPillars: '\u56db\u67f1',
+    fiveElements: '\u4e94\u884c',
+    tenGods: '\u5341\u795e',
+    luckCycles: '\u5927\u8fd0',
+    aiReading: 'AI\u89e3\u8bfb',
+    cnDayMaster: '',
+    cnPillars: '',
+    cnElements: '',
+    cnTenGods: '',
+    cnLuck: '',
+    cnAI: '',
+    general: '\u7efc\u5408',
+    career: '\u4e8b\u4e1a',
+    wealth: '\u8d22\u8fd0',
+    love: '\u611f\u60c5',
+    accessCodePlaceholder: '\u8bf7\u8f93\u5165\u8bbf\u95ee\u7801',
+    requestInterpretation: '\u8bf7\u6c42AI\u89e3\u8bfb',
+    readingStars: '\u89e3\u8bfb\u661f\u8c61\u4e2d',
+    pillarYear: '\u5e74\u67f1',
+    pillarMonth: '\u6708\u67f1',
+    pillarDay: '\u65e5\u67f1',
+    pillarHour: '\u65f6\u67f1',
+    Wood: '\u6728', Fire: '\u706b', Earth: '\u571f', Metal: '\u91d1', Water: '\u6c34',
+    Strong: '\u5f3a', Weak: '\u5f31', Balanced: '\u5e73\u8861',
+    dayMasterLabel: '\u65e5\u4e3b',
+    age: '\u5c81',
+    noTenGods: '\u672a\u68c0\u6d4b\u5230\u663e\u8457\u5341\u795e',
+    tooltipDayMaster: '\u65e5\u4e3b\u662f\u4f60\u65e5\u67f1\u7684\u5929\u5e72\uff0c\u4ee3\u8868\u4f60\u7684\u6838\u5fc3\u8eab\u4efd\u3001\u6027\u683c\uff0c\u4ee5\u53ca\u4f60\u4e0e\u4e16\u754c\u4e92\u52a8\u7684\u65b9\u5f0f\u3002\u5b83\u662f\u6574\u4e2a\u516b\u5b57\u547d\u76d8\u7684\u57fa\u7840\u3002',
+    tooltipPillars: '\u56db\u67f1\u4ee3\u8868\u4f60\u51fa\u751f\u7684\u5e74\u3001\u6708\u3001\u65e5\u3001\u65f6\u3002\u6bcf\u67f1\u7531\u5929\u5e72\uff08\u4e0a\uff09\u548c\u5730\u652f\uff08\u4e0b\uff09\u7ec4\u6210\uff0c\u5171\u516b\u4e2a\u5b57\uff0c\u6545\u79f0\u201c\u516b\u5b57\u201d\u3002',
+    tooltipElements: '\u6728\u3001\u706b\u3001\u571f\u3001\u91d1\u3001\u6c34\u901a\u8fc7\u76f8\u751f\u76f8\u514b\u7684\u5faa\u73af\u76f8\u4e92\u4f5c\u7528\u3002\u547d\u76d8\u4e2d\u4e94\u884c\u7684\u5e73\u8861\u63ed\u793a\u4e86\u4f60\u7684\u4f18\u52bf\u3001\u5f31\u70b9\u548c\u4eba\u751f\u8d8b\u52bf\u3002',
+    tooltipTenGods: '\u5341\u795e\u662f\u547d\u76d8\u4e2d\u5404\u5b57\u4e0e\u65e5\u4e3b\u4e4b\u95f4\u7684\u5173\u7cfb\u6a21\u5f0f\uff0c\u63ed\u793a\u6027\u683c\u7279\u5f81\u3001\u4eba\u9645\u5173\u7cfb\u3001\u4e8b\u4e1a\u503e\u5411\u548c\u8d22\u8fd0\u6f5c\u529b\u3002',
+    tooltipLuck: '\u6bcf\u4e2a\u5927\u8fd0\u8de8\u8d8a\u7ea6\u5341\u5e74\uff0c\u4ee3\u8868\u4eba\u751f\u7684\u4e00\u4e2a\u91cd\u8981\u9636\u6bb5\u3002\u6bcf\u4e2a\u5927\u8fd0\u4e2d\u7684\u4e94\u884c\u4e0e\u4f60\u7684\u547d\u76d8\u76f8\u4e92\u4f5c\u7528\uff0c\u5f62\u6210\u987a\u5883\u6216\u9006\u5883\u3002',
+    Rat: '\u9f20', Ox: '\u725b', Tiger: '\u864e', Rabbit: '\u5154',
+    Dragon: '\u9f99', Snake: '\u86c7', Horse: '\u9a6c', Goat: '\u7f8a',
+    Monkey: '\u7334', Rooster: '\u9e21', Dog: '\u72d7', Pig: '\u732a',
+    langOptionEn: '\u82f1\u6587 (English)',
+    langOptionZh: '\u7b80\u4f53\u4e2d\u6587',
+  },
+};
+
+// Ten Gods name translation map
+const tenGodsZh = {
+  'Friend (Bi Jian)': '\u6bd4\u80a9',
+  'Rob Wealth (Jie Cai)': '\u52ab\u8d22',
+  'Eating God (Shi Shen)': '\u98df\u795e',
+  'Hurting Officer (Shang Guan)': '\u4f24\u5b98',
+  'Indirect Wealth (Pian Cai)': '\u504f\u8d22',
+  'Direct Wealth (Zheng Cai)': '\u6b63\u8d22',
+  'Seven Killings (Qi Sha)': '\u4e03\u6740',
+  'Direct Officer (Zheng Guan)': '\u6b63\u5b98',
+  'Indirect Resource (Pian Yin)': '\u504f\u5370',
+  'Direct Resource (Zheng Yin)': '\u6b63\u5370',
+};
+
+function t(key) {
+  return i18n[currentUILang][key] !== undefined ? i18n[currentUILang][key] : (i18n['en'][key] || key);
+}
+
+function tElement(el) {
+  return t(el);
+}
+
+function tAnimal(animal) {
+  return t(animal);
+}
+
+function tTenGod(name) {
+  if (currentUILang === 'zh' && tenGodsZh[name]) return tenGodsZh[name];
+  return name;
+}
 
 // ─── Element color helper ───
 function elClass(element) {
@@ -951,26 +1137,32 @@ function md(text) {
 // ─── Render Functions ───
 function renderDayMaster(dm) {
   const el = document.getElementById('dayMasterBadge');
+  const elName = tElement(dm.element);
+  const strengthLabel = t(dm.strength);
+  const dmLabel = t('dayMasterLabel');
   el.innerHTML = `
     <div class="dm-char ${elClass(dm.element)}">${dm.char}</div>
     <div class="dm-info">
-      <div class="dm-name">${dm.name} - ${dm.element}</div>
-      <div class="dm-detail">${dm.element} Day Master</div>
+      <div class="dm-name">${dm.name} - ${elName}</div>
+      <div class="dm-detail">${elName} ${dmLabel}</div>
     </div>
-    <span class="dm-strength ${dm.strength.toLowerCase()}">${dm.strength}</span>
+    <span class="dm-strength ${dm.strength.toLowerCase()}">${strengthLabel}</span>
   `;
 }
 
 function renderPillars(pillars) {
   const grid = document.getElementById('pillarsGrid');
   const order = [
-    { key: 'year', label: 'Year' },
-    { key: 'month', label: 'Month' },
-    { key: 'day', label: 'Day' },
-    { key: 'hour', label: 'Hour' },
+    { key: 'year', label: t('pillarYear') },
+    { key: 'month', label: t('pillarMonth') },
+    { key: 'day', label: t('pillarDay') },
+    { key: 'hour', label: t('pillarHour') },
   ];
   grid.innerHTML = order.map(({ key, label }) => {
     const p = pillars[key];
+    const elStem = tElement(p.elementStem);
+    const elBranch = tElement(p.elementBranch);
+    const animal = p.animal ? tAnimal(p.animal) : '';
     return `
       <div class="pillar">
         <div class="pillar-label">${label}</div>
@@ -980,8 +1172,8 @@ function renderPillars(pillars) {
         </div>
         <div class="pillar-info">
           <div class="pillar-pinyin">${p.stem} ${p.branch}</div>
-          <div class="pillar-element">${p.elementStem} / ${p.elementBranch}</div>
-          ${p.animal ? `<div class="pillar-animal">${p.animal}</div>` : ''}
+          <div class="pillar-element">${elStem} / ${elBranch}</div>
+          ${animal ? `<div class="pillar-animal">${animal}</div>` : ''}
         </div>
       </div>
     `;
@@ -993,7 +1185,7 @@ function renderElements(counts, percents) {
   const els = ['Wood', 'Fire', 'Earth', 'Metal', 'Water'];
   chart.innerHTML = els.map(el => `
     <div class="element-row">
-      <span class="element-name" style="color:${elColor(el)}">${el}</span>
+      <span class="element-name" style="color:${elColor(el)}">${tElement(el)}</span>
       <div class="element-bar-wrap">
         <div class="element-bar" style="width:0%;background:${elColor(el)}" data-width="${percents[el]}"></div>
       </div>
@@ -1012,12 +1204,12 @@ function renderTenGods(tenGods) {
   const list = document.getElementById('tenGodsList');
   const active = tenGods.filter(tg => tg.strength > 0).sort((a, b) => b.strength - a.strength);
   if (active.length === 0) {
-    list.innerHTML = '<div style="color:var(--text-dim);font-size:0.82rem;padding:0.5rem">No dominant Ten Gods detected</div>';
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:0.82rem;padding:0.5rem">' + t('noTenGods') + '</div>';
     return;
   }
   list.innerHTML = active.map(tg => `
     <div class="ten-god-item">
-      <span class="ten-god-name">${tg.name}</span>
+      <span class="ten-god-name">${tTenGod(tg.name)}</span>
       <span class="ten-god-strength">${tg.strength}</span>
     </div>
   `).join('');
@@ -1025,16 +1217,97 @@ function renderTenGods(tenGods) {
 
 function renderLuckCycles(cycles) {
   const container = document.getElementById('luckCycles');
+  const ageLabel = t('age');
   container.innerHTML = cycles.map(c => `
     <div class="luck-cycle">
-      <div class="luck-age">Age ${c.range}</div>
+      <div class="luck-age">${ageLabel} ${c.range}</div>
       <div class="luck-chars">
         <span class="${elClass(c.elementStem)}">${c.stemCn}</span><span class="${elClass(c.elementBranch)}">${c.branchCn}</span>
       </div>
       <div class="luck-pinyin">${c.stem} ${c.branch}</div>
-      <div class="luck-el" style="color:var(--text-dim)">${c.elementStem} / ${c.elementBranch}</div>
+      <div class="luck-el" style="color:var(--text-dim)">${tElement(c.elementStem)} / ${tElement(c.elementBranch)}</div>
     </div>
   `).join('');
+}
+
+// ─── Switch UI Language ───
+function switchUILanguage(lang) {
+  currentUILang = lang;
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.title = lang === 'zh' ? '\u516b\u5b57\u547d\u7406' : 'Ba Zi Reading';
+
+  // Toggle button active state
+  document.querySelectorAll('.ui-lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.uilang === lang);
+  });
+
+  // Static text updates
+  document.getElementById('headerTitle').textContent = t('headerTitle');
+  document.getElementById('headerSubtitle').textContent = t('headerSubtitle');
+  document.getElementById('birthDetailsTitle').textContent = t('birthDetails');
+  const cnSpan = document.getElementById('birthDetailsCn');
+  cnSpan.textContent = t('birthDetailsCn');
+  cnSpan.style.display = t('birthDetailsCn') ? '' : 'none';
+
+  document.getElementById('labelYear').textContent = t('year');
+  document.getElementById('labelMonth').textContent = t('month');
+  document.getElementById('labelDay').textContent = t('day');
+  document.getElementById('labelBirthTime').textContent = t('birthTime');
+  document.getElementById('labelGender').textContent = t('gender');
+  document.getElementById('optMale').textContent = t('male');
+  document.getElementById('optFemale').textContent = t('female');
+
+  const calcBtn = document.getElementById('calcBtn');
+  if (!calcBtn.disabled) calcBtn.textContent = t('generateChart');
+
+  // Section titles
+  document.getElementById('titleDayMaster').textContent = t('dayMaster');
+  document.getElementById('titlePillars').textContent = t('fourPillars');
+  document.getElementById('titleElements').textContent = t('fiveElements');
+  document.getElementById('titleTenGods').textContent = t('tenGods');
+  document.getElementById('titleLuck').textContent = t('luckCycles');
+  document.getElementById('titleAI').textContent = t('aiReading');
+
+  // Chinese sub-labels (hide in ZH mode since title is already Chinese)
+  ['cnDayMaster', 'cnPillars', 'cnElements', 'cnTenGods', 'cnLuck', 'cnAI'].forEach(id => {
+    const el = document.getElementById(id);
+    const val = t(id);
+    el.textContent = val;
+    el.style.display = val ? '' : 'none';
+  });
+
+  // Tooltips
+  document.getElementById('tooltipDayMaster').textContent = t('tooltipDayMaster');
+  document.getElementById('tooltipPillars').textContent = t('tooltipPillars');
+  document.getElementById('tooltipElements').textContent = t('tooltipElements');
+  document.getElementById('tooltipTenGods').textContent = t('tooltipTenGods');
+  document.getElementById('tooltipLuck').textContent = t('tooltipLuck');
+
+  // Mode tabs
+  document.getElementById('tabGeneral').textContent = t('general');
+  document.getElementById('tabCareer').textContent = t('career');
+  document.getElementById('tabWealth').textContent = t('wealth');
+  document.getElementById('tabLove').textContent = t('love');
+
+  // AI section
+  document.getElementById('accessCode').placeholder = t('accessCodePlaceholder');
+  const interpBtn = document.getElementById('interpretBtn');
+  if (!interpBtn.disabled) interpBtn.textContent = t('requestInterpretation');
+  document.getElementById('loadingText').textContent = t('readingStars');
+
+  // AI language dropdown options
+  const langSel = document.getElementById('langSelect');
+  langSel.options[0].textContent = t('langOptionEn');
+  langSel.options[1].textContent = t('langOptionZh');
+
+  // Re-render chart data if available
+  if (chartData) {
+    renderDayMaster(chartData.dayMaster);
+    renderPillars(chartData.pillars);
+    renderElements(chartData.fiveElements, chartData.fiveElementsPercent);
+    renderTenGods(chartData.tenGods);
+    renderLuckCycles(chartData.luckCycles);
+  }
 }
 
 // ─── Calculate ───
@@ -1044,7 +1317,7 @@ document.getElementById('baziForm').addEventListener('submit', async (e) => {
   const errEl = document.getElementById('calcError');
   errEl.classList.remove('visible');
   btn.disabled = true;
-  btn.textContent = 'Calculating...';
+  btn.textContent = t('calculating');
 
   const timeVal = document.getElementById('birthTime').value; // "HH:MM"
   const [timeH, timeM] = timeVal.split(':').map(Number);
@@ -1088,7 +1361,7 @@ document.getElementById('baziForm').addEventListener('submit', async (e) => {
     errEl.classList.add('visible');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Generate Chart';
+    btn.textContent = t('generateChart');
   }
 });
 
@@ -1141,7 +1414,15 @@ document.getElementById('interpretBtn').addEventListener('click', async () => {
   } finally {
     btn.disabled = false;
     loading.style.display = 'none';
+    btn.textContent = t('requestInterpretation');
   }
+});
+
+// ─── UI Language Toggle ───
+document.getElementById('uiLangToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.ui-lang-btn');
+  if (!btn || btn.classList.contains('active')) return;
+  switchUILanguage(btn.dataset.uilang);
 });
 
 // ─── Info Tooltips ───
